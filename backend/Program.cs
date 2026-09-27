@@ -1,3 +1,6 @@
+using backend.Data;
+using Microsoft.EntityFrameworkCore;
+
 namespace backend
 {
     public class Program
@@ -6,8 +9,16 @@ namespace backend
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllers();
+
+            builder.Services.AddDbContext<AppDbContext>(dbContext =>
+                            dbContext.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            //REGESTRATE REPOS HERE
+            //builder.Services.AddScoped<IProductRepository, ProductRepository>();
+
+            //REGESTRATE SERVICES HERE
+            //builder.Services.AddScoped<IProductService, ProductService>();
 
             builder.Services.AddCors(options =>
             {
