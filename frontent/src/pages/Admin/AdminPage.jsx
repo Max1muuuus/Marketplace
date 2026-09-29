@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { createProduct, getCategories, getCollection, getMarketplaceRatings, getOrders, getProducts, getReviews, getSellers, getUsers, saveCollection } from '../../services/marketplaceStore'
+import { createProduct, deleteUser, getCategories, getMarketplaceRatings, getOrders, getProducts, getReviews, getSellers, getUsers, saveCollection } from '../../services/marketplaceStore'
+import { useFavorites } from '../../context/FavoritesContext'
 import { useLanguage } from '../../context/useLanguage'
 import styles from './AdminPage.module.scss'
 
@@ -34,6 +35,7 @@ const fieldsFor = (collection, item) => {
 
 export default function AdminPage() {
   const { t, formatCurrency } = useLanguage()
+  const { removeFavorites } = useFavorites()
   const [section, setSection] = useState('Overview')
   const [data, setData] = useState(loadData)
   const [editor, setEditor] = useState(null)
@@ -53,8 +55,7 @@ export default function AdminPage() {
     } else if (collection === 'reviews') {
       saveCollection('reviews', data.reviews.filter((item) => item.id !== id))
     } else if (collection === 'users') {
-      saveCollection('accounts', getCollection('accounts').filter((account) => account.id !== id))
-      saveCollection('users', data.users.filter((item) => item.id !== id))
+      removeFavorites(deleteUser(id))
     } else {
       saveCollection(collection, data[collection].filter((item) => item.id !== id))
     }

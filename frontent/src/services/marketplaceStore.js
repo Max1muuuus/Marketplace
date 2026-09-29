@@ -61,6 +61,35 @@ export function getMarketplaceRatings() {
   }))
 }
 
+export function setUserRole(userId, role) {
+  const updateRole = (items) => items.map((item) => item.id === userId ? { ...item, role } : item)
+  saveCollection('users', updateRole(getCollection('users')))
+  saveCollection('accounts', updateRole(getCollection('accounts')))
+}
+
+export function deleteUser(userId) {
+  const removedProductIds = new Set(
+    getProducts()
+      .filter((product) => product.ownerId === userId || product.sellerId === userId)
+      .map((product) => product.id),
+  )
+
+  saveCollection('accounts', getCollection('accounts').filter((account) => account.id !== userId))
+  saveCollection('users', getCollection('users').filter((user) => user.id !== userId))
+  saveCollection('products', getProducts().filter((product) => !removedProductIds.has(product.id)))
+  saveCollection('reviews', getReviews().filter((review) => !removedProductIds.has(review.productId) && review.userId !== userId))
+  saveCollection('marketplace-ratings', getMarketplaceRatings().filter((rating) => rating.userId !== userId))
+
+  try {
+    const favoriteIds = JSON.parse(localStorage.getItem('marketplace-favorites') || '[]')
+    localStorage.setItem('marketplace-favorites', JSON.stringify(favoriteIds.filter((productId) => !removedProductIds.has(productId))))
+  } catch {
+    localStorage.removeItem('marketplace-favorites')
+  }
+
+  return [...removedProductIds]
+}
+
 export function saveMarketplaceRating(rating) {
   const ratings = getMarketplaceRatings()
   const previous = ratings.find((entry) => entry.userId === rating.userId)
@@ -69,6 +98,35 @@ export function saveMarketplaceRating(rating) {
     'marketplace-ratings',
     previous ? ratings.map((entry) => entry.userId === rating.userId ? nextRating : entry) : [...ratings, nextRating],
   )
+}
+
+export function saveProductReview(productId, review) {
+  const reviews = getReviews()
+  const existing = reviews.find((entry) => entry.productId === productId && entry.userId === review.userId)
+  const nextReview = {
+    ...review,
+    id: existing?.id || `r-${Date.now()}`,
+    productId,
+    date: new Date().toISOString().slice(0, 10),
+  }
+  const nextReviews = existing
+    ? reviews.map((entry) => entry.id === existing.id ? nextReview : entry)
+    : [...reviews, nextReview]
+  saveCollection('reviews', nextReviews)
+
+  const product = getProducts().find((entry) => entry.id === productId)
+  if (product) {
+    const count = Number(product.reviewCount) || 0
+    const nextCount = count + (existing ? 0 : 1)
+    const currentTotal = Number(product.rating || 0) * count
+    const adjustedTotal = currentTotal - Number(existing?.rating || 0) + Number(review.rating)
+    updateProduct(productId, {
+      rating: nextCount ? adjustedTotal / nextCount : Number(review.rating),
+      reviewCount: nextCount,
+    })
+  }
+
+  return nextReview
 }
 
 export function createProduct(product) {
@@ -84,7 +142,10 @@ export function createProduct(product) {
     status: Number(product.stock) > 0 ? 'in-stock' : 'out-of-stock',
     tag: product.tag || 'New',
   }
-  return saveCollection('products', [...allProducts, nextProduct])
+  saveCollection('products', [...allProducts, nextProduct])
+  const owner = getUsers().find((user) => user.id === product.ownerId)
+  if (owner?.role === 'customer') setUserRole(owner.id, 'seller')
+  return nextProduct
 }
 
 export function updateProduct(id, changes) {

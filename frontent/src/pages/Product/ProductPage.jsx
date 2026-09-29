@@ -4,20 +4,25 @@ import ProductCard from '../../components/ProductCard/ProductCard'
 import { fetchProductById, fetchReviews, fetchSellerById } from '../../services/mockApi'
 import { useCart } from '../../context/CartContext'
 import { useFavorites } from '../../context/FavoritesContext'
+import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/useLanguage'
 import styles from './ProductPage.module.scss'
-import { getProducts } from '../../services/marketplaceStore'
+import { getProducts, saveProductReview } from '../../services/marketplaceStore'
 
 export default function ProductPage() {
   const { id } = useParams()
   const { addToCart } = useCart()
   const { toggleFavorite, isFavorite } = useFavorites()
+  const { user } = useAuth()
   const { t, formatCurrency } = useLanguage()
   const [product, setProduct] = useState(null)
   const [seller, setSeller] = useState(null)
   const [reviews, setReviews] = useState([])
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
+  const [reviewRating, setReviewRating] = useState('5')
+  const [reviewText, setReviewText] = useState('')
+  const [reviewSaved, setReviewSaved] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -29,19 +34,42 @@ export default function ProductPage() {
         setSeller(currentSeller)
         const productReviews = await fetchReviews(currentProduct.id)
         setReviews(productReviews)
+        const ownReview = productReviews.find((review) => review.userId === user?.id)
+        if (ownReview) {
+          setReviewRating(String(ownReview.rating))
+          setReviewText(ownReview.text)
+        }
       }
     }
 
     load()
-  }, [id])
+  }, [id, user?.id])
+
+  const submitReview = async (event) => {
+    event.preventDefault()
+    if (!user || !product) return
+
+    saveProductReview(product.id, {
+      userId: user.id,
+      user: user.name,
+      rating: Number(reviewRating),
+      text: reviewText.trim(),
+    })
+
+    const [updatedProduct, updatedReviews] = await Promise.all([
+      fetchProductById(product.id),
+      fetchReviews(product.id),
+    ])
+    setProduct(updatedProduct)
+    setReviews(updatedReviews)
+    setReviewSaved(true)
+  }
 
   if (!product) {
     return <div className={styles.empty}>{t('Product not found.')}</div>
   }
 
-  const ratingAverage = reviews.length
-    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
-    : product.rating
+  const ratingAverage = Number(product.rating || 0).toFixed(1)
 
   const related = getProducts().filter((entry) => entry.category === product.category && entry.id !== product.id).slice(0, 4)
 
@@ -125,8 +153,29 @@ export default function ProductPage() {
             <span className={styles.rating}>★ {ratingAverage}</span>
           </div>
 
+          {user ? (
+            <form className={styles.reviewForm} onSubmit={submitReview}>
+              <label>
+                {t('Your rating')}
+                <select value={reviewRating} onChange={(event) => { setReviewRating(event.target.value); setReviewSaved(false) }}>
+                  {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} / 5</option>)}
+                </select>
+              </label>
+              <label>
+                {t('Write a review')}
+                <textarea required maxLength="1000" value={reviewText} placeholder={t('Share your experience with this product')} onChange={(event) => { setReviewText(event.target.value); setReviewSaved(false) }} />
+              </label>
+              <div className={styles.reviewFormAction}>
+                <button type="submit">{t(reviews.some((review) => review.userId === user.id) ? 'Update review' : 'Submit review')}</button>
+                {reviewSaved ? <span role="status">{t('Review saved.')}</span> : null}
+              </div>
+            </form>
+          ) : (
+            <p className={styles.reviewSignIn}><Link to="/login">{t('Log in')}</Link> {t('to leave a review.')}</p>
+          )}
+
           <div className={styles.reviewList}>
-            {reviews.map((review) => (
+            {reviews.length ? reviews.map((review) => (
               <article key={review.id} className={styles.reviewCard}>
                 <div className={styles.reviewHeader}>
                   <strong>{review.user}</strong>
@@ -135,7 +184,7 @@ export default function ProductPage() {
                 <div className={styles.reviewStars}>{'★'.repeat(review.rating)}</div>
                 <p>{t(review.text)}</p>
               </article>
-            ))}
+            )) : <p>{t('No reviews yet.')}</p>}
           </div>
         </section>
 

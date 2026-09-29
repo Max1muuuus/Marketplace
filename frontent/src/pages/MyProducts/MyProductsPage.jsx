@@ -1,20 +1,27 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/useLanguage'
-import { createProduct, deleteProduct, getCategories, getProducts, updateProduct } from '../../services/marketplaceStore'
+import { createProduct, deleteProduct, getCategories, getProducts, setUserRole, updateProduct } from '../../services/marketplaceStore'
 import styles from './MyProductsPage.module.scss'
 
 const emptyForm = { name: '', brand: '', category: '', price: '', stock: '', image: '', description: '' }
 
 export default function MyProductsPage() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const { t } = useLanguage()
   const [products, setProducts] = useState(() => getProducts().filter((product) => product.ownerId === user?.id))
   const [categories] = useState(getCategories)
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (user?.role === 'customer' && products.length > 0) {
+      setUserRole(user.id, 'seller')
+      updateUser({ role: 'seller' })
+    }
+  }, [products.length, updateUser, user?.id, user?.role])
 
   const refresh = () => setProducts(getProducts().filter((product) => product.ownerId === user.id))
   const changeField = (event) => setForm({ ...form, [event.target.name]: event.target.value })
@@ -42,6 +49,9 @@ export default function MyProductsPage() {
       })
     } else {
       createProduct(productData)
+      if (user.role === 'customer') {
+        updateUser({ role: 'seller' })
+      }
     }
     setForm(emptyForm)
     setEditingId(null)
