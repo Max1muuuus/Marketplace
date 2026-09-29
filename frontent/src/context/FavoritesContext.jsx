@@ -18,10 +18,14 @@ export function FavoritesProvider({ children }) {
     )
   }
 
+  const removeFavorites = (ids) => {
+    setFavorites((current) => current.filter((id) => !ids.includes(id)))
+  }
+
   const isFavorite = (id) => favorites.includes(id)
 
   const value = useMemo(
-    () => ({ favorites, toggleFavorite, isFavorite }),
+    () => ({ favorites, toggleFavorite, removeFavorites, isFavorite }),
     [favorites],
   )
 

@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
-import { products } from '../../data/mockData'
 import { useFavorites } from '../../context/FavoritesContext'
 import { useLanguage } from '../../context/useLanguage'
+import { getProducts } from '../../services/marketplaceStore'
 import styles from './FavoritesPage.module.scss'
 
 export default function FavoritesPage() {
   const { t } = useLanguage()
   const { favorites } = useFavorites()
-  const items = products.filter((product) => favorites.includes(product.id))
+  const items = getProducts().filter((product) => favorites.includes(product.id))
 
   return (
     <div className={styles.page}>

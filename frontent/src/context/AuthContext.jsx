@@ -75,8 +75,12 @@ export function AuthProvider({ children }) {
     setToken('')
   }
 
+  const updateUser = (changes) => {
+    setUser((current) => current ? { ...current, ...changes } : current)
+  }
+
   const value = useMemo(
-    () => ({ user, token, login, register, logout }),
+    () => ({ user, token, login, register, logout, updateUser }),
     [user, token],
   )
 
