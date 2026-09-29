@@ -1,36 +1,12 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
-import { products as mockProducts } from '../../data/mockData'
-import { fetchProducts } from '../../services/mockApi'
+import { products } from '../../data/mockData'
 import { useFavorites } from '../../context/FavoritesContext'
 import styles from './FavoritesPage.module.scss'
 
 export default function FavoritesPage() {
   const { favorites } = useFavorites()
-  const [remoteProducts, setRemoteProducts] = useState([])
-
-  useEffect(() => {
-    let active = true
-
-    fetchProducts()
-      .then((products) => {
-        if (active) setRemoteProducts(products)
-      })
-      .catch(() => {
-        if (active) setRemoteProducts([])
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
-
-  const allProducts = [...mockProducts, ...remoteProducts]
-  const items = allProducts.filter((product, index, products) =>
-    favorites.some((favoriteId) => String(favoriteId) === String(product.id))
-      && products.findIndex((entry) => String(entry.id) === String(product.id)) === index,
-  )
+  const items = products.filter((product) => favorites.includes(product.id))
 
   return (
     <div className={styles.page}>

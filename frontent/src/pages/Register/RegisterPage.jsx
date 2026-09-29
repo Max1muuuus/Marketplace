@@ -5,7 +5,7 @@ import styles from './RegisterPage.module.scss'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { register } = useAuth()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
 
@@ -23,14 +23,14 @@ export default function RegisterPage() {
     }
 
     try {
-      await login({
+      await register({
         email: form.email,
         password: form.password,
         name: form.name,
       })
       navigate('/')
     } catch (error) {
-      setErrors({ email: 'Registration failed. Please try again.' })
+      setErrors({ email: error.message || 'Registration failed. Please try again.' })
     }
   }
 

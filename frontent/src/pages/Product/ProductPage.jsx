@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
 import { fetchProductById, fetchReviews, fetchSellerById } from '../../services/mockApi'
-import { products } from '../../data/mockData'
 import { useCart } from '../../context/CartContext'
 import { useFavorites } from '../../context/FavoritesContext'
 import styles from './ProductPage.module.scss'
+import { getProducts } from '../../services/marketplaceStore'
 
 export default function ProductPage() {
   const { id } = useParams()
@@ -41,7 +41,7 @@ export default function ProductPage() {
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : product.rating
 
-  const related = products.filter((entry) => entry.category === product.category && entry.id !== product.id).slice(0, 4)
+  const related = getProducts().filter((entry) => entry.category === product.category && entry.id !== product.id).slice(0, 4)
 
   return (
     <div className={styles.page}>

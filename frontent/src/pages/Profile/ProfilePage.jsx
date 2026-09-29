@@ -35,6 +35,7 @@ export default function ProfilePage() {
             <h3>Quick actions</h3>
             <div className={styles.actions}>
               <Link to="/orders" className={styles.primaryButton}>Orders</Link>
+              {user.role === 'admin' ? <Link to="/admin" className={styles.secondaryButton}>Admin panel</Link> : <Link to="/my-products" className={styles.secondaryButton}>My products</Link>}
               <Link to="/favorites" className={styles.secondaryButton}>Favorites</Link>
               <Link to="/cart" className={styles.secondaryButton}>Cart</Link>
             </div>

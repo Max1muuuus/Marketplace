@@ -28,59 +28,34 @@ export function AuthProvider({ children }) {
   }, [token])
 
   const login = async (payload) => {
-    try {
-      const response = await loginRequest({ email: payload.email, password: payload.password || 'demo123' })
-      const nextUser = {
-        id: response.user.id,
-        name: `${response.user.firstName} ${response.user.lastName}`.trim() || 'Demo User',
-        email: response.user.email,
-        role: response.user.role,
-      }
-      setToken(response.token)
-      setUser(nextUser)
-      return nextUser
-    } catch (error) {
-      const fallbackUser = {
-        id: 'user-1',
-        name: payload.name || 'Demo User',
-        email: payload.email,
-        role: 'customer',
-      }
-      setUser(fallbackUser)
-      setToken('demo-token')
-      return fallbackUser
+    const response = await loginRequest({ email: payload.email, password: payload.password })
+    const nextUser = {
+      id: response.user.id,
+      name: response.user.name || `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim() || payload.name || 'Demo User',
+      email: response.user.email,
+      role: response.user.role,
     }
+    setToken(response.token)
+    setUser(nextUser)
+    return nextUser
   }
 
   const register = async (payload) => {
-    try {
-      const response = await registerRequest({
-        firstName: payload.firstName || payload.name?.split(' ')[0] || 'New',
-        lastName: payload.lastName || payload.name?.split(' ').slice(1).join(' ') || 'User',
-        email: payload.email,
-        password: payload.password || 'demo123',
-      })
-
-      const nextUser = {
-        id: response.user.id,
-        name: `${response.user.firstName} ${response.user.lastName}`.trim(),
-        email: response.user.email,
-        role: response.user.role,
-      }
-      setToken(response.token)
-      setUser(nextUser)
-      return nextUser
-    } catch (error) {
-      const fallbackUser = {
-        id: 'user-2',
-        name: `${payload.firstName || 'New'} ${payload.lastName || 'User'}`.trim(),
-        email: payload.email,
-        role: 'customer',
-      }
-      setUser(fallbackUser)
-      setToken('demo-token')
-      return fallbackUser
+    const response = await registerRequest({
+      firstName: payload.firstName || payload.name?.split(' ')[0] || 'New',
+      lastName: payload.lastName || payload.name?.split(' ').slice(1).join(' ') || 'User',
+      email: payload.email,
+      password: payload.password || 'demo123',
+    })
+    const nextUser = {
+      id: response.user.id,
+      name: response.user.name || `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim(),
+      email: response.user.email,
+      role: response.user.role,
     }
+    setToken(response.token)
+    setUser(nextUser)
+    return nextUser
   }
 
   const logout = () => {

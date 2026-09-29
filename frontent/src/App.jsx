@@ -21,17 +21,20 @@ import AboutPage from './pages/About/AboutPage'
 import ContactsPage from './pages/Contacts/ContactsPage'
 import SearchPage from './pages/Search/SearchPage'
 import NotFoundPage from './pages/NotFound/NotFoundPage'
+import AdminPage from './pages/Admin/AdminPage'
+import MyProductsPage from './pages/MyProducts/MyProductsPage'
+import { useAuth } from './context/AuthContext'
 
 import './App.css'
 
-function App() {
-  const [language, setLanguage] = useState(() => localStorage.getItem('marketplace-language') || 'en')
-  const [theme, setTheme] = useState('dark')
+function AdminRoute({ children }) {
+  const { user } = useAuth()
+  return user?.role === 'admin' ? children : <Navigate to={user ? '/profile' : '/login'} replace />
+}
 
-  const changeLanguage = (nextLanguage) => {
-    setLanguage(nextLanguage)
-    localStorage.setItem('marketplace-language', nextLanguage)
-  }
+function App() {
+  const [language, setLanguage] = useState('en')
+  const [theme, setTheme] = useState('dark')
 
   return (
     <AuthProvider>
@@ -41,7 +44,7 @@ function App() {
             <div className={`app-shell ${theme === 'dark' ? 'theme-dark' : 'theme-light'}`}>
               <Header
                 language={language}
-                setLanguage={changeLanguage}
+                setLanguage={setLanguage}
                 theme={theme}
                 setTheme={setTheme}
               />
@@ -56,6 +59,8 @@ function App() {
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/my-products" element={<MyProductsPage />} />
+                  <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/about" element={<AboutPage />} />

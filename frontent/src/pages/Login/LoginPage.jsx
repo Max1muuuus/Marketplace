@@ -22,10 +22,10 @@ export default function LoginPage() {
     }
 
     try {
-      await login({ email: form.email, password: form.password, name: 'Demo User' })
-      navigate('/')
+      const user = await login({ email: form.email, password: form.password, name: 'Demo User' })
+      navigate(user.role === 'admin' ? '/admin' : '/')
     } catch (error) {
-      setErrors({ password: 'Login failed. Please check your credentials.' })
+      setErrors({ password: error.message || 'Login failed. Please check your credentials.' })
     }
   }
 
@@ -47,6 +47,7 @@ export default function LoginPage() {
           </div>
           <button type="submit" className={styles.primaryButton}>Login</button>
         </form>
+        <p className={styles.hint}>Admin demo: <strong>admin@markethub.com</strong> / <strong>admin123</strong></p>
         <p>
           No account yet? <Link to="/register">Create one</Link>
         </p>
