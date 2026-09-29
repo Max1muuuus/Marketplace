@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/useLanguage'
 import { createProduct, deleteProduct, getCategories, getProducts, updateProduct } from '../../services/marketplaceStore'
 import styles from './MyProductsPage.module.scss'
 
@@ -8,6 +9,7 @@ const emptyForm = { name: '', brand: '', category: '', price: '', stock: '', ima
 
 export default function MyProductsPage() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const [products, setProducts] = useState(() => getProducts().filter((product) => product.ownerId === user?.id))
   const [categories] = useState(getCategories)
   const [form, setForm] = useState(emptyForm)
@@ -74,42 +76,42 @@ export default function MyProductsPage() {
   }
 
   if (!user) {
-    return <div className={styles.empty}><h1>Sign in to list products</h1><Link to="/login">Login</Link></div>
+    return <div className={styles.empty}><h1>{t('Sign in to list products')}</h1><Link to="/login">{t('Login')}</Link></div>
   }
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <header className={styles.heading}><div><span className={styles.eyebrow}>Seller workspace</span><h1>My products</h1></div><span>{products.length} listings</span></header>
+        <header className={styles.heading}><div><span className={styles.eyebrow}>{t('Seller workspace')}</span><h1>{t('My products')}</h1></div><span>{products.length} {t('listings')}</span></header>
         <div className={styles.layout}>
           <form className={styles.form} onSubmit={submit}>
-            <h2>{editingId ? 'Edit listing' : 'Add a product'}</h2>
-            <label>Product name<input required name="name" value={form.name} onChange={changeField} /></label>
+            <h2>{t(editingId ? 'Edit listing' : 'Add a product')}</h2>
+            <label>{t('Product name')}<input required name="name" value={form.name} onChange={changeField} /></label>
             <div className={styles.twoCol}>
-              <label>Brand<input required name="brand" value={form.brand} onChange={changeField} /></label>
-              <label>Category<select required name="category" value={form.category} onChange={changeField}><option value="">Select category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+              <label>{t('Brand')}<input required name="brand" value={form.brand} onChange={changeField} /></label>
+              <label>{t('Category')}<select required name="category" value={form.category} onChange={changeField}><option value="">{t('Select category')}</option>{categories.map((category) => <option key={category.id} value={category.id}>{t(category.name)}</option>)}</select></label>
             </div>
             <div className={styles.twoCol}>
-              <label>Price (UAH)<input required min="1" type="number" name="price" value={form.price} onChange={changeField} /></label>
-              <label>Stock<input required min="0" type="number" name="stock" value={form.stock} onChange={changeField} /></label>
+              <label>{t('Price (UAH)')}<input required min="1" type="number" name="price" value={form.price} onChange={changeField} /></label>
+              <label>{t('Stock')}<input required min="0" type="number" name="stock" value={form.stock} onChange={changeField} /></label>
             </div>
-            <label>Image URL<input required type="url" name="image" value={form.image} onChange={changeField} /></label>
-            <label>Description<textarea required rows="4" name="description" value={form.description} onChange={changeField} /></label>
-            {error ? <p className={styles.error}>{error}</p> : null}
-            <div className={styles.formActions}><button type="submit" className={styles.primary}>{editingId ? 'Save changes' : 'Publish product'}</button>{editingId ? <button type="button" className={styles.cancel} onClick={() => { setEditingId(null); setForm(emptyForm) }}>Cancel</button> : null}</div>
+            <label>{t('Image URL')}<input required type="url" name="image" value={form.image} onChange={changeField} /></label>
+            <label>{t('Description')}<textarea required rows="4" name="description" value={form.description} onChange={changeField} /></label>
+            {error ? <p className={styles.error}>{t(error)}</p> : null}
+            <div className={styles.formActions}><button type="submit" className={styles.primary}>{t(editingId ? 'Save changes' : 'Publish product')}</button>{editingId ? <button type="button" className={styles.cancel} onClick={() => { setEditingId(null); setForm(emptyForm) }}>{t('Cancel')}</button> : null}</div>
           </form>
 
           <section className={styles.listingSection}>
-            <h2>Your listings</h2>
+            <h2>{t('Your listings')}</h2>
             {products.length ? <div className={styles.list}>
               {products.map((product) => (
                 <article className={styles.product} key={product.id}>
                   <img src={product.image} alt="" />
-                  <div className={styles.productInfo}><Link to={`/product/${product.id}`}>{product.name}</Link><span>{product.price} UAH · {product.stock} in stock</span></div>
-                  <div className={styles.actions}><button type="button" onClick={() => beginEdit(product)}>Edit</button><button type="button" className={styles.delete} onClick={() => remove(product.id)}>Delete</button></div>
+                  <div className={styles.productInfo}><Link to={`/product/${product.id}`}>{product.name}</Link><span>{product.price} UAH · {product.stock} {t('in stock')}</span></div>
+                  <div className={styles.actions}><button type="button" onClick={() => beginEdit(product)}>{t('Edit')}</button><button type="button" className={styles.delete} onClick={() => remove(product.id)}>{t('Delete')}</button></div>
                 </article>
               ))}
-            </div> : <p className={styles.emptyList}>You have not listed any products yet.</p>}
+            </div> : <p className={styles.emptyList}>{t('You have not listed any products yet.')}</p>}
           </section>
         </div>
       </div>

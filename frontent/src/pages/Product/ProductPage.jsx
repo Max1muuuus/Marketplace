@@ -4,6 +4,7 @@ import ProductCard from '../../components/ProductCard/ProductCard'
 import { fetchProductById, fetchReviews, fetchSellerById } from '../../services/mockApi'
 import { useCart } from '../../context/CartContext'
 import { useFavorites } from '../../context/FavoritesContext'
+import { useLanguage } from '../../context/useLanguage'
 import styles from './ProductPage.module.scss'
 import { getProducts } from '../../services/marketplaceStore'
 
@@ -11,6 +12,7 @@ export default function ProductPage() {
   const { id } = useParams()
   const { addToCart } = useCart()
   const { toggleFavorite, isFavorite } = useFavorites()
+  const { t, formatCurrency } = useLanguage()
   const [product, setProduct] = useState(null)
   const [seller, setSeller] = useState(null)
   const [reviews, setReviews] = useState([])
@@ -34,7 +36,7 @@ export default function ProductPage() {
   }, [id])
 
   if (!product) {
-    return <div className={styles.empty}>Product not found.</div>
+    return <div className={styles.empty}>{t('Product not found.')}</div>
   }
 
   const ratingAverage = reviews.length
@@ -62,23 +64,23 @@ export default function ProductPage() {
 
           <div className={styles.productInfo}>
             <div className={styles.badgeRow}>
-              <span className={styles.badge}>{product.tag}</span>
-              <span className={styles.stock}>{product.stock > 0 ? 'In stock' : 'Out of stock'}</span>
+              <span className={styles.badge}>{t(product.tag)}</span>
+              <span className={styles.stock}>{t(product.stock > 0 ? 'In stock' : 'Out of stock')}</span>
             </div>
 
             <h1>{product.name}</h1>
             <div className={styles.metaRow}>
               <span className={styles.rating}>★ {product.rating}</span>
-              <span>{product.reviewCount} reviews</span>
-              <span>Brand: {product.brand}</span>
+              <span>{product.reviewCount} {t('reviews')}</span>
+              <span>{t('Brand:')} {product.brand}</span>
             </div>
 
             <div className={styles.priceRow}>
-              <strong>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(product.price)}</strong>
-              {product.oldPrice ? <span>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(product.oldPrice)}</span> : null}
+              <strong>{formatCurrency(product.price)}</strong>
+              {product.oldPrice ? <span>{formatCurrency(product.oldPrice)}</span> : null}
             </div>
 
-            <p className={styles.description}>{product.description}</p>
+            <p className={styles.description}>{t(product.description)}</p>
 
             <div className={styles.quantityRow}>
               <button type="button" onClick={() => setQuantity((current) => Math.max(1, current - 1))}>-</button>
@@ -87,16 +89,16 @@ export default function ProductPage() {
             </div>
 
             <div className={styles.actionRow}>
-              <button type="button" className={styles.primaryButton} onClick={() => addToCart(product, quantity)}>Add to cart</button>
+              <button type="button" className={styles.primaryButton} onClick={() => addToCart(product, quantity)}>{t('Add to cart')}</button>
               <button type="button" className={styles.secondaryButton} onClick={() => toggleFavorite(product.id)}>
-                {isFavorite(product.id) ? 'Saved' : 'Save'}
+                {t(isFavorite(product.id) ? 'Saved' : 'Save')}
               </button>
             </div>
 
             <div className={styles.sellerCard}>
               <div>
-                <strong>{seller?.name || 'Marketplace seller'}</strong>
-                <p>{seller?.location || 'Ukraine'}</p>
+                <strong>{seller?.name || t('Marketplace seller')}</strong>
+                <p>{t(seller?.location || 'Ukraine')}</p>
               </div>
               <span>★ {seller?.rating || 4.8}</span>
             </div>
@@ -105,13 +107,13 @@ export default function ProductPage() {
 
         <section className={styles.specsSection}>
           <div className={styles.sectionHeader}>
-            <h2>Specifications</h2>
+            <h2>{t('Specifications')}</h2>
           </div>
           <div className={styles.specGrid}>
             {Object.entries(product.specs).map(([key, value]) => (
               <div key={key} className={styles.specItem}>
-                <span>{key}</span>
-                <strong>{value}</strong>
+                <span>{t(key)}</span>
+                <strong>{t(value)}</strong>
               </div>
             ))}
           </div>
@@ -119,7 +121,7 @@ export default function ProductPage() {
 
         <section className={styles.reviewsSection}>
           <div className={styles.sectionHeader}>
-            <h2>Customer reviews</h2>
+            <h2>{t('Customer reviews')}</h2>
             <span className={styles.rating}>★ {ratingAverage}</span>
           </div>
 
@@ -131,7 +133,7 @@ export default function ProductPage() {
                   <span>{review.date}</span>
                 </div>
                 <div className={styles.reviewStars}>{'★'.repeat(review.rating)}</div>
-                <p>{review.text}</p>
+                <p>{t(review.text)}</p>
               </article>
             ))}
           </div>
@@ -139,8 +141,8 @@ export default function ProductPage() {
 
         <section className={styles.relatedSection}>
           <div className={styles.sectionHeader}>
-            <h2>Similar items</h2>
-            <Link to="/catalog">View all</Link>
+            <h2>{t('Similar items')}</h2>
+            <Link to="/catalog">{t('View all')}</Link>
           </div>
           <div className={styles.relatedGrid}>
             {related.map((item) => (

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createProduct, getCategories, getCollection, getMarketplaceRatings, getOrders, getProducts, getReviews, getSellers, getUsers, saveCollection } from '../../services/marketplaceStore'
+import { useLanguage } from '../../context/useLanguage'
 import styles from './AdminPage.module.scss'
 
 const sections = ['Overview', 'Users', 'Sellers', 'Products', 'Categories', 'Orders', 'Reviews', 'Statistics']
@@ -32,6 +33,7 @@ const fieldsFor = (collection, item) => {
 }
 
 export default function AdminPage() {
+  const { t, formatCurrency } = useLanguage()
   const [section, setSection] = useState('Overview')
   const [data, setData] = useState(loadData)
   const [editor, setEditor] = useState(null)
@@ -100,7 +102,7 @@ export default function AdminPage() {
     ['Products', data.products.length],
     ['Orders', data.orders.length],
     ['Reviews', data.reviews.length + data.ratings.length],
-    ['Revenue', new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(data.orders.reduce((sum, order) => sum + Number(order.total || 0), 0))],
+    ['Revenue', formatCurrency(data.orders.reduce((sum, order) => sum + Number(order.total || 0), 0))],
   ]
 
   const beginEdit = (collection, item) => {
@@ -110,16 +112,16 @@ export default function AdminPage() {
   const table = (headers, rows) => (
     <div className={styles.tableWrap}>
       <table>
-        <thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}<th>Actions</th></tr></thead>
-        <tbody>{rows.length ? rows : <tr><td colSpan={headers.length + 1} className={styles.empty}>No records yet.</td></tr>}</tbody>
+        <thead><tr>{headers.map((header) => <th key={header}>{t(header)}</th>)}<th>{t('Actions')}</th></tr></thead>
+        <tbody>{rows.length ? rows : <tr><td colSpan={headers.length + 1} className={styles.empty}>{t('No records yet.')}</td></tr>}</tbody>
       </table>
     </div>
   )
 
   const actions = (collection, item, canEdit = true, canDelete = true) => (
     <div className={styles.rowActions}>
-      {canEdit ? <button type="button" onClick={() => beginEdit(collection, item)}>Edit</button> : null}
-      {canDelete ? <button type="button" className={styles.danger} onClick={() => removeEntity(collection, item.id)}>Delete</button> : null}
+      {canEdit ? <button type="button" onClick={() => beginEdit(collection, item)}>{t('Edit')}</button> : null}
+      {canDelete ? <button type="button" className={styles.danger} onClick={() => removeEntity(collection, item.id)}>{t('Delete')}</button> : null}
     </div>
   )
 
@@ -130,15 +132,15 @@ export default function AdminPage() {
         : '—'
       return (
         <>
-          <div className={styles.metricGrid}>{metrics.map(([label, value]) => <article key={label}><span>{label}</span><strong>{value}</strong></article>)}</div>
+          <div className={styles.metricGrid}>{metrics.map(([label, value]) => <article key={label}><span>{t(label)}</span><strong>{value}</strong></article>)}</div>
           {section === 'Statistics' ? (
             <div className={styles.statsGrid}>
-              <article><span>Marketplace rating</span><strong>{averageRating}{averageRating !== '—' ? ' / 5' : ''}</strong></article>
-              <article><span>Categories</span><strong>{data.categories.length}</strong></article>
-              <article><span>Completed order value</span><strong>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(data.orders.reduce((sum, order) => sum + Number(order.total || 0), 0))}</strong></article>
-              <article><span>Products in stock</span><strong>{data.products.filter((product) => Number(product.stock) > 0).length}</strong></article>
+              <article><span>{t('Marketplace rating')}</span><strong>{averageRating}{averageRating !== '—' ? ' / 5' : ''}</strong></article>
+              <article><span>{t('Categories')}</span><strong>{data.categories.length}</strong></article>
+              <article><span>{t('Completed order value')}</span><strong>{formatCurrency(data.orders.reduce((sum, order) => sum + Number(order.total || 0), 0))}</strong></article>
+              <article><span>{t('Products in stock')}</span><strong>{data.products.filter((product) => Number(product.stock) > 0).length}</strong></article>
             </div>
-          ) : <p className={styles.note}>Marketplace activity at a glance. Choose a section to manage its records.</p>}
+          ) : <p className={styles.note}>{t('Marketplace activity at a glance. Choose a section to manage its records.')}</p>}
         </>
       )
     }
@@ -150,10 +152,10 @@ export default function AdminPage() {
     if (section === 'Sellers') return (
       <>
         <form className={styles.addForm} onSubmit={addSeller}>
-          <input required aria-label="Seller name" placeholder="Seller name" value={newSeller.name} onChange={(event) => setNewSeller({ ...newSeller, name: event.target.value })} />
-          <input required aria-label="Location" placeholder="Location" value={newSeller.location} onChange={(event) => setNewSeller({ ...newSeller, location: event.target.value })} />
-          <input required aria-label="Description" placeholder="Description" value={newSeller.description} onChange={(event) => setNewSeller({ ...newSeller, description: event.target.value })} />
-          <button type="submit">Add seller</button>
+          <input required aria-label={t('Seller name')} placeholder={t('Seller name')} value={newSeller.name} onChange={(event) => setNewSeller({ ...newSeller, name: event.target.value })} />
+          <input required aria-label={t('Location')} placeholder={t('Location')} value={newSeller.location} onChange={(event) => setNewSeller({ ...newSeller, location: event.target.value })} />
+          <input required aria-label={t('Description')} placeholder={t('Description')} value={newSeller.description} onChange={(event) => setNewSeller({ ...newSeller, description: event.target.value })} />
+          <button type="submit">{t('Add seller')}</button>
         </form>
         {table(['Seller', 'Location', 'Sales'], data.sellers.map((seller) => (
           <tr key={seller.id}><td>{seller.name}</td><td>{seller.location}</td><td>{seller.sales || 0}</td><td>{actions('sellers', seller)}</td></tr>
@@ -163,7 +165,7 @@ export default function AdminPage() {
 
     if (section === 'Products') return (
       <>
-        <div className={styles.toolbar}><span>{data.products.length} marketplace listings</span><button type="button" onClick={() => setEditor({ collection: 'products', id: null, values: { name: '', brand: '', category: data.categories[0]?.id || '', price: '', stock: '', description: '', image: '' } })}>Add product</button></div>
+        <div className={styles.toolbar}><span>{data.products.length} {t('marketplace listings')}</span><button type="button" onClick={() => setEditor({ collection: 'products', id: null, values: { name: '', brand: '', category: data.categories[0]?.id || '', price: '', stock: '', description: '', image: '' } })}>{t('Add product')}</button></div>
         {table(['Product', 'Category', 'Price', 'Stock'], data.products.map((product) => (
           <tr key={product.id}><td>{product.name}</td><td>{product.category}</td><td>{product.price} UAH</td><td>{product.stock}</td><td>{actions('products', product)}</td></tr>
         )))}
@@ -173,10 +175,10 @@ export default function AdminPage() {
     if (section === 'Categories') return (
       <>
         <form className={styles.addForm} onSubmit={addCategory}>
-          <input required aria-label="Category name" placeholder="Category name" value={newCategory.name} onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })} />
-          <input required aria-label="Category slug" placeholder="slug" value={newCategory.slug} onChange={(event) => setNewCategory({ ...newCategory, slug: event.target.value })} />
-          <input aria-label="Category icon" placeholder="Icon" value={newCategory.icon} onChange={(event) => setNewCategory({ ...newCategory, icon: event.target.value })} />
-          <button type="submit">Add category</button>
+          <input required aria-label={t('Category name')} placeholder={t('Category name')} value={newCategory.name} onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })} />
+          <input required aria-label={t('Category slug')} placeholder={t('Category slug')} value={newCategory.slug} onChange={(event) => setNewCategory({ ...newCategory, slug: event.target.value })} />
+          <input aria-label={t('Category icon')} placeholder={t('Icon')} value={newCategory.icon} onChange={(event) => setNewCategory({ ...newCategory, icon: event.target.value })} />
+          <button type="submit">{t('Add category')}</button>
         </form>
         {table(['Category', 'Slug', 'Description'], data.categories.map((category) => (
           <tr key={category.id}><td>{category.icon} {category.name}</td><td>{category.slug}</td><td>{category.description}</td><td>{actions('categories', category)}</td></tr>
@@ -185,12 +187,12 @@ export default function AdminPage() {
     )
 
     if (section === 'Orders') return table(['Order', 'Customer', 'Seller', 'Status', 'Total'], data.orders.map((order) => (
-      <tr key={order.id}><td>{order.id}</td><td>{order.customer}</td><td>{order.seller}</td><td>{order.status}</td><td>{order.total} UAH</td><td>{actions('orders', order)}</td></tr>
+      <tr key={order.id}><td>{order.id}</td><td>{order.customer}</td><td>{order.seller}</td><td>{t(order.status)}</td><td>{formatCurrency(order.total)}</td><td>{actions('orders', order)}</td></tr>
     )))
 
     const reviewRows = [
-      ...data.reviews.map((review) => <tr key={review.id}><td>Product</td><td>{review.user}</td><td>{review.rating} / 5</td><td>{review.text}</td><td>{actions('reviews', review, false)}</td></tr>),
-      ...data.ratings.map((rating) => <tr key={rating.id}><td>Marketplace</td><td>{rating.userName}</td><td>{rating.rating} / 5</td><td>{rating.text || 'Rating only'}</td><td>{actions('ratings', rating, false)}</td></tr>),
+      ...data.reviews.map((review) => <tr key={review.id}><td>{t('Product')}</td><td>{review.user}</td><td>{review.rating} / 5</td><td>{t(review.text)}</td><td>{actions('reviews', review, false)}</td></tr>),
+      ...data.ratings.map((rating) => <tr key={rating.id}><td>{t('Marketplace')}</td><td>{rating.userName}</td><td>{rating.rating} / 5</td><td>{rating.text ? t(rating.text) : t('Rating only')}</td><td>{actions('ratings', rating, false)}</td></tr>),
     ]
     return table(['Type', 'Author', 'Rating', 'Review'], reviewRows)
   }
@@ -199,35 +201,35 @@ export default function AdminPage() {
     <div className={styles.page}>
       <div className={styles.container}>
         <header className={styles.heading}>
-          <div><span className={styles.eyebrow}>MarketHub control</span><h1>Admin panel</h1></div>
-          <span className={styles.adminMark}>Administrator</span>
+          <div><span className={styles.eyebrow}>{t('MarketHub control')}</span><h1>{t('Admin panel')}</h1></div>
+          <span className={styles.adminMark}>{t('Administrator')}</span>
         </header>
-        <nav className={styles.tabs} aria-label="Admin sections">
-          {sections.map((name) => <button key={name} type="button" className={section === name ? styles.activeTab : ''} onClick={() => setSection(name)}>{name}</button>)}
+        <nav className={styles.tabs} aria-label={t('Admin sections')}>
+          {sections.map((name) => <button key={name} type="button" className={section === name ? styles.activeTab : ''} onClick={() => setSection(name)}>{t(name)}</button>)}
         </nav>
         <section className={styles.panel}>
-          <div className={styles.panelHeading}><h2>{section}</h2><span>{section === 'Overview' ? 'Live local data' : `${section} management`}</span></div>
+          <div className={styles.panelHeading}><h2>{t(section)}</h2><span>{section === 'Overview' ? t('Live local data') : `${t(section)} ${t('management')}`}</span></div>
           {renderSection()}
         </section>
       </div>
       {editor ? (
         <div className={styles.overlay}>
           <form className={styles.editor} onSubmit={saveEdit}>
-            <h2>{editor.id ? `Edit ${editor.collection.slice(0, -1)}` : 'Create product'}</h2>
+            <h2>{editor.id ? `${t('Edit')} ${t(editor.collection.slice(0, -1))}` : t('Create product')}</h2>
             {fieldsFor(editor.collection, editor.values).map(({ name, type }) => (
-              <label key={name}>{name}
+              <label key={name}>{t(name)}
                 {name === 'role' ? (
                   <select value={editor.values[name]} onChange={(event) => setEditor({ ...editor, values: { ...editor.values, [name]: event.target.value } })}>
-                    <option value="customer">Customer</option><option value="seller">Seller</option><option value="admin">Admin</option>
+                    <option value="customer">{t('Customer')}</option><option value="seller">{t('Seller')}</option><option value="admin">{t('Admin')}</option>
                   </select>
                 ) : name === 'category' ? (
-                  <select value={editor.values[name]} onChange={(event) => setEditor({ ...editor, values: { ...editor.values, [name]: event.target.value } })}>{data.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
+                  <select value={editor.values[name]} onChange={(event) => setEditor({ ...editor, values: { ...editor.values, [name]: event.target.value } })}>{data.categories.map((category) => <option key={category.id} value={category.id}>{t(category.name)}</option>)}</select>
                 ) : name === 'status' ? (
-                  <select value={editor.values[name]} onChange={(event) => setEditor({ ...editor, values: { ...editor.values, [name]: event.target.value } })}><option>В обробці</option><option>Відправлено</option><option>Доставлено</option><option>Скасовано</option></select>
+                  <select value={editor.values[name]} onChange={(event) => setEditor({ ...editor, values: { ...editor.values, [name]: event.target.value } })}><option>{t('В обробці')}</option><option>{t('Відправлено')}</option><option>{t('Доставлено')}</option><option>{t('Скасовано')}</option></select>
                 ) : <input required={name !== 'description'} type={type} value={editor.values[name]} onChange={(event) => setEditor({ ...editor, values: { ...editor.values, [name]: event.target.value } })} />}
               </label>
             ))}
-            <div className={styles.editorActions}><button type="button" className={styles.cancel} onClick={() => setEditor(null)}>Cancel</button><button type="submit">Save changes</button></div>
+            <div className={styles.editorActions}><button type="button" className={styles.cancel} onClick={() => setEditor(null)}>{t('Cancel')}</button><button type="submit">{t('Save changes')}</button></div>
           </form>
         </div>
       ) : null}

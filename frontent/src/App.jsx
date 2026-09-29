@@ -5,6 +5,8 @@ import Footer from './components/Footer/Footer'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { FavoritesProvider } from './context/FavoritesContext'
+import { LanguageProvider } from './context/LanguageContext'
+import { useLanguage } from './context/useLanguage'
 
 import HomePage from './pages/Home/HomePage'
 import CatalogPage from './pages/Catalog/CatalogPage'
@@ -32,8 +34,8 @@ function AdminRoute({ children }) {
   return user?.role === 'admin' ? children : <Navigate to={user ? '/profile' : '/login'} replace />
 }
 
-function App() {
-  const [language, setLanguage] = useState('en')
+function AppContent() {
+  const { language, setLanguage } = useLanguage()
   const [theme, setTheme] = useState('dark')
 
   return (
@@ -76,6 +78,14 @@ function App() {
         </FavoritesProvider>
       </CartProvider>
     </AuthProvider>
+  )
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   )
 }
 

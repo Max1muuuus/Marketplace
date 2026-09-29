@@ -3,11 +3,23 @@ import { loginRequest, registerRequest } from '../services/mockApi'
 
 const AuthContext = createContext(null)
 
+function normalizeRoleSuffix(name, role) {
+  const suffix = role === 'admin' ? ' Admin' : role === 'customer' ? ' User' : ''
+  return suffix && name?.endsWith(suffix) ? name.slice(0, -suffix.length).trim() : name
+}
+
+function readSavedUser() {
+  try {
+    const savedUser = JSON.parse(localStorage.getItem('marketplace-user') || 'null')
+    return savedUser ? { ...savedUser, name: normalizeRoleSuffix(savedUser.name, savedUser.role) } : null
+  } catch {
+    localStorage.removeItem('marketplace-user')
+    return null
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('marketplace-user')
-    return saved ? JSON.parse(saved) : null
-  })
+  const [user, setUser] = useState(readSavedUser)
 
   const [token, setToken] = useState(() => localStorage.getItem('marketplace-token') || '')
 
@@ -31,7 +43,7 @@ export function AuthProvider({ children }) {
     const response = await loginRequest({ email: payload.email, password: payload.password })
     const nextUser = {
       id: response.user.id,
-      name: response.user.name || `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim() || payload.name || 'Demo User',
+      name: normalizeRoleSuffix(response.user.name || `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim() || payload.name || 'Demo', response.user.role),
       email: response.user.email,
       role: response.user.role,
     }
@@ -43,13 +55,13 @@ export function AuthProvider({ children }) {
   const register = async (payload) => {
     const response = await registerRequest({
       firstName: payload.firstName || payload.name?.split(' ')[0] || 'New',
-      lastName: payload.lastName || payload.name?.split(' ').slice(1).join(' ') || 'User',
+      lastName: payload.lastName || payload.name?.split(' ').slice(1).join(' ') || '',
       email: payload.email,
       password: payload.password || 'demo123',
     })
     const nextUser = {
       id: response.user.id,
-      name: response.user.name || `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim(),
+      name: normalizeRoleSuffix(response.user.name || `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim(), response.user.role),
       email: response.user.email,
       role: response.user.role,
     }

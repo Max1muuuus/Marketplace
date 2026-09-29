@@ -2,6 +2,11 @@ import { categories, orders, products, reviews, sellers, users } from '../data/m
 
 const seeds = { categories, orders, products, reviews, sellers, users }
 
+function normalizeRoleSuffix(name, role) {
+  const suffix = role === 'admin' ? ' Admin' : role === 'customer' ? ' User' : ''
+  return suffix && name?.endsWith(suffix) ? name.slice(0, -suffix.length).trim() : name
+}
+
 export function getCollection(name) {
   const saved = localStorage.getItem(`marketplace-${name}`)
   if (saved) {
@@ -32,8 +37,11 @@ export function getSellers() {
 }
 
 export function getUsers() {
-  const allUsers = getCollection('users')
-  const admin = { id: 'u-admin', name: 'MarketHub Admin', email: 'admin@markethub.com', role: 'admin', createdAt: '2026-09-29' }
+  const allUsers = getCollection('users').map((user) => ({
+    ...user,
+    name: normalizeRoleSuffix(user.name, user.role),
+  }))
+  const admin = { id: 'u-admin', name: 'MarketHub', email: 'admin@markethub.com', role: 'admin', createdAt: '2026-09-29' }
   return allUsers.some((user) => user.email === admin.email) ? allUsers : [...allUsers, admin]
 }
 
@@ -46,7 +54,11 @@ export function getReviews() {
 }
 
 export function getMarketplaceRatings() {
-  return getCollection('marketplace-ratings')
+  const usersById = new Map(getUsers().map((user) => [user.id, user]))
+  return getCollection('marketplace-ratings').map((rating) => ({
+    ...rating,
+    userName: normalizeRoleSuffix(rating.userName, usersById.get(rating.userId)?.role),
+  }))
 }
 
 export function saveMarketplaceRating(rating) {
@@ -92,7 +104,7 @@ export function registerAccount({ firstName, lastName, email, password }) {
 
   const account = {
     id: `u-${Date.now()}`,
-    name: `${firstName} ${lastName}`.trim(),
+    name: `${firstName || ''} ${lastName || ''}`.trim(),
     email: normalizedEmail,
     password,
     role: 'customer',
@@ -106,7 +118,7 @@ export function registerAccount({ firstName, lastName, email, password }) {
 export function authenticateAccount(email, password) {
   const normalizedEmail = email.trim().toLowerCase()
   if (normalizedEmail === 'admin@markethub.com' && password === 'admin123') {
-    return { id: 'u-admin', name: 'MarketHub Admin', email: normalizedEmail, role: 'admin' }
+    return { id: 'u-admin', name: 'MarketHub', email: normalizedEmail, role: 'admin' }
   }
 
   const account = getCollection('accounts').find((entry) => entry.email === normalizedEmail && entry.password === password)
