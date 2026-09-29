@@ -1,19 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
 import SearchBar from '../../components/Search/SearchBar'
-import { categories, products } from '../../data/mockData'
+import { getCategories, getProducts } from '../../services/marketplaceStore'
 import styles from './CatalogPage.module.scss'
 
-const brands = [...new Set(products.map((product) => product.brand))]
-
 export default function CatalogPage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('featured')
   const [view, setView] = useState('grid')
+  const [products] = useState(getProducts)
+  const [categories] = useState(getCategories)
   const [filters, setFilters] = useState({
-    category: searchParams.get('category') || '',
     brand: '',
     rating: '',
     status: '',
@@ -21,9 +20,7 @@ export default function CatalogPage() {
     maxPrice: '',
   })
 
-  useEffect(() => {
-    setFilters((current) => ({ ...current, category: searchParams.get('category') || '' }))
-  }, [searchParams])
+  const selectedCategory = searchParams.get('category') || ''
 
   const visibleProducts = useMemo(() => {
     let nextProducts = [...products]
@@ -37,8 +34,8 @@ export default function CatalogPage() {
       )
     }
 
-    if (filters.category) {
-      nextProducts = nextProducts.filter((product) => product.category === filters.category)
+    if (selectedCategory) {
+      nextProducts = nextProducts.filter((product) => product.category === selectedCategory || categories.find((category) => category.slug === selectedCategory)?.id === product.category)
     }
 
     if (filters.brand) {
@@ -70,7 +67,7 @@ export default function CatalogPage() {
     }
 
     return nextProducts
-  }, [search, filters, sort])
+  }, [search, filters, sort, products, categories, selectedCategory])
 
   return (
     <div className={styles.page}>
@@ -87,7 +84,12 @@ export default function CatalogPage() {
           <aside className={styles.sidebar}>
             <div className={styles.filterGroup}>
               <h3>Category</h3>
-              <select value={filters.category} onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}>
+              <select value={selectedCategory} onChange={(event) => {
+                const next = new URLSearchParams(searchParams)
+                if (event.target.value) next.set('category', event.target.value)
+                else next.delete('category')
+                setSearchParams(next)
+              }}>
                 <option value="">All categories</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>{category.name}</option>
@@ -99,7 +101,7 @@ export default function CatalogPage() {
               <h3>Brand</h3>
               <select value={filters.brand} onChange={(event) => setFilters((current) => ({ ...current, brand: event.target.value }))}>
                 <option value="">Any brand</option>
-                {brands.map((brand) => (
+                {[...new Set(products.map((product) => product.brand))].map((brand) => (
                   <option key={brand} value={brand}>{brand}</option>
                 ))}
               </select>

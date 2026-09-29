@@ -77,9 +77,36 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
+.ratingSection {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1.2fr);
+  gap: 22px;
+  margin-top: 32px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.ratingSection h2 { margin: 14px 0 8px; }
+.ratingSection > div:first-child p, .signIn { color: rgba(255, 255, 255, 0.68); }
+.signIn a { color: #9cece2; }
+.ratingForm { display: grid; gap: 12px; }
+.ratingForm label { display: grid; gap: 7px; color: rgba(255, 255, 255, 0.7); font-size: 0.85rem; }
+.ratingForm select, .ratingForm textarea { width: 100%; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 5px; color: white; background: #11191a; font: inherit; }
+.ratingForm button { justify-self: start; min-height: 40px; padding: 0 15px; border: 0; border-radius: 5px; color: #08221e; background: #55dbc7; font-weight: 700; }
+.saved { color: #9cece2; font-size: 0.84rem; }
+.ratingList { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ratingList article { padding: 14px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; }
+.ratingList article strong { margin-right: 10px; }
+.ratingList article span { color: #f5c56a; font-size: 0.82rem; }
+.ratingList article p { margin: 8px 0 0; color: rgba(255, 255, 255, 0.68); font-size: 0.88rem; }
+
 @media (max-width: 720px) {
   .stats,
-  .valueGrid {
+  .valueGrid,
+  .ratingList,
+  .ratingSection {
     grid-template-columns: 1fr;
   }
 }

@@ -5,23 +5,17 @@ import { useAuth } from '../../context/AuthContext'
 import { useFavorites } from '../../context/FavoritesContext'
 
 const navItems = [
-  { to: '/', en: 'Home', uk: 'Головна' },
-  { to: '/catalog', en: 'Catalog', uk: 'Каталог' },
-  { to: '/categories', en: 'Categories', uk: 'Категорії' },
-  { to: '/about', en: 'About', uk: 'Про нас' },
-  { to: '/contacts', en: 'Contacts', uk: 'Контакти' },
+  { to: '/', label: 'Home' },
+  { to: '/catalog', label: 'Catalog' },
+  { to: '/categories', label: 'Categories' },
+  { to: '/about', label: 'About' },
+  { to: '/contacts', label: 'Contacts' },
 ]
-
-const labels = {
-  en: { search: 'Search', dark: 'Dark', light: 'Light', favorites: 'Favorites', cart: 'Cart', logout: 'Logout', login: 'Login', register: 'Register' },
-  uk: { search: 'Пошук', dark: 'Темна', light: 'Світла', favorites: 'Обране', cart: 'Кошик', logout: 'Вийти', login: 'Увійти', register: 'Реєстрація' },
-}
 
 export default function Header({ language, setLanguage, theme, setTheme }) {
   const { itemCount } = useCart()
   const { user, logout } = useAuth()
   const { favorites } = useFavorites()
-  const text = labels[language] || labels.en
 
   return (
     <header className={styles.header}>
@@ -38,7 +32,7 @@ export default function Header({ language, setLanguage, theme, setTheme }) {
               to={item.to}
               className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
             >
-              {item[language] || item.en}
+              {item.label}
             </NavLink>
           ))}
         </nav>
@@ -66,28 +60,29 @@ export default function Header({ language, setLanguage, theme, setTheme }) {
             className={styles.themeButton}
             onClick={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
           >
-            {theme === 'dark' ? text.dark : text.light}
+            {theme === 'dark' ? 'Dark' : 'Light'}
           </button>
 
-          <Link to="/search" className={styles.searchButton}>{text.search}</Link>
-          <Link to="/favorites" className={styles.iconButton} aria-label={text.favorites}>
+          <Link to="/search" className={styles.searchButton}>Search</Link>
+          <Link to="/favorites" className={styles.iconButton} aria-label="Favorites">
             ♥
             {favorites.length > 0 ? <span>{favorites.length}</span> : null}
           </Link>
-          <Link to="/cart" className={styles.iconButton} aria-label={text.cart}>
+          <Link to="/cart" className={styles.iconButton} aria-label="Cart">
             🛒
             {itemCount > 0 ? <span>{itemCount}</span> : null}
           </Link>
 
           {user ? (
             <div className={styles.userMenu}>
+              {user.role === 'admin' ? <Link to="/admin" className={styles.profileButton}>Admin</Link> : <Link to="/my-products" className={styles.profileButton}>My products</Link>}
               <Link to="/profile" className={styles.profileButton}>{user.name}</Link>
-              <button type="button" className={styles.logoutButton} onClick={logout}>{text.logout}</button>
+              <button type="button" className={styles.logoutButton} onClick={logout}>Logout</button>
             </div>
           ) : (
             <div className={styles.userMenu}>
-              <Link to="/login" className={styles.profileButton}>{text.login}</Link>
-              <Link to="/register" className={styles.registerButton}>{text.register}</Link>
+              <Link to="/login" className={styles.profileButton}>Login</Link>
+              <Link to="/register" className={styles.registerButton}>Register</Link>
             </div>
           )}
         </div>

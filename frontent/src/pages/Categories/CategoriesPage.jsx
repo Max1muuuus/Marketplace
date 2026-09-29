@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { categories } from '../../data/mockData'
+import { getCategories } from '../../services/marketplaceStore'
 import styles from './CategoriesPage.module.scss'
 
 export default function CategoriesPage() {
+  const [categories] = useState(getCategories)
+
   return (
     <div className={styles.page}>
       <div className={styles.container}>
@@ -13,7 +16,7 @@ export default function CategoriesPage() {
 
         <div className={styles.grid}>
           {categories.map((category) => (
-            <Link key={category.id} to={`/catalog?category=${category.slug}`} className={styles.card}>
+            <Link key={category.id} to={`/catalog?category=${category.id}`} className={styles.card}>
               <span className={styles.icon}>{category.icon}</span>
               <h3>{category.name}</h3>
               <p>{category.description}</p>
