@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/useLanguage'
 import styles from './RegisterPage.module.scss'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
   const { register } = useAuth()
+  const { t } = useLanguage()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
 
@@ -37,28 +39,28 @@ export default function RegisterPage() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <span className={styles.eyebrow}>Create account</span>
-        <h1>Register</h1>
+        <span className={styles.eyebrow}>{t('Create account')}</span>
+        <h1>{t('Register')}</h1>
         <form onSubmit={handleSubmit}>
           <div className={styles.field}>
-            <label>Name</label>
+            <label>{t('Name')}</label>
             <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-            {errors.name ? <small>{errors.name}</small> : null}
+            {errors.name ? <small>{t(errors.name)}</small> : null}
           </div>
           <div className={styles.field}>
-            <label>Email</label>
+            <label>{t('Email')}</label>
             <input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-            {errors.email ? <small>{errors.email}</small> : null}
+            {errors.email ? <small>{t(errors.email)}</small> : null}
           </div>
           <div className={styles.field}>
-            <label>Password</label>
+            <label>{t('Password')}</label>
             <input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-            {errors.password ? <small>{errors.password}</small> : null}
+            {errors.password ? <small>{t(errors.password)}</small> : null}
           </div>
-          <button type="submit" className={styles.primaryButton}>Register</button>
+          <button type="submit" className={styles.primaryButton}>{t('Register')}</button>
         </form>
         <p>
-          Already have an account? <Link to="/login">Login</Link>
+          {t('Already have an account?')} <Link to="/login">{t('Login')}</Link>
         </p>
       </div>
     </div>

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchOrders } from '../../services/mockApi'
+import { useLanguage } from '../../context/useLanguage'
 import styles from './OrdersPage.module.scss'
 
 export default function OrdersPage() {
+  const { t, formatCurrency } = useLanguage()
   const [orders, setOrders] = useState([])
 
   useEffect(() => {
@@ -19,8 +21,8 @@ export default function OrdersPage() {
     <div className={styles.page}>
       <div className={styles.container}>
         <div className={styles.heading}>
-          <span className={styles.eyebrow}>Orders</span>
-          <h1>My orders</h1>
+          <span className={styles.eyebrow}>{t('Orders')}</span>
+          <h1>{t('My orders')}</h1>
         </div>
 
         <div className={styles.list}>
@@ -28,21 +30,21 @@ export default function OrdersPage() {
             <article key={order.id} className={styles.card}>
               <div className={styles.headerRow}>
                 <div>
-                  <p className={styles.label}>Order #{order.id}</p>
+                  <p className={styles.label}>{t('Order #')}{order.id}</p>
                   <strong>{order.date}</strong>
                 </div>
-                <span className={styles.status}>{order.status}</span>
+                <span className={styles.status}>{t(order.status)}</span>
               </div>
 
               <div className={styles.meta}>
-                <span>{order.items} items</span>
+                <span>{order.items} {t('items')}</span>
                 <span>{order.customer}</span>
                 <span>{order.seller}</span>
               </div>
 
               <div className={styles.footerRow}>
-                <strong>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(order.total)}</strong>
-                <Link to="/profile">View details</Link>
+                <strong>{formatCurrency(order.total)}</strong>
+                <Link to="/profile">{t('View details')}</Link>
               </div>
             </article>
           ))}

@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom'
 import styles from './ProductCard.module.scss'
 import { useCart } from '../../context/CartContext'
 import { useFavorites } from '../../context/FavoritesContext'
+import { useLanguage } from '../../context/useLanguage'
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart()
   const { toggleFavorite, isFavorite } = useFavorites()
+  const { t, formatCurrency } = useLanguage()
 
   if (!product) return null
 
@@ -17,11 +19,11 @@ export default function ProductCard({ product }) {
           type="button"
           className={`${styles.favoriteButton} ${isFavorite(product.id) ? styles.active : ''}`}
           onClick={() => toggleFavorite(product.id)}
-          aria-label="Toggle favorite"
+          aria-label={t('Toggle favorite')}
         >
           ♥
         </button>
-        <span className={styles.badge}>{product.tag || 'New'}</span>
+        <span className={styles.badge}>{t(product.tag || 'New')}</span>
       </div>
 
       <div className={styles.body}>
@@ -31,16 +33,16 @@ export default function ProductCard({ product }) {
         </div>
 
         <div className={styles.priceRow}>
-          <strong>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(product.price)}</strong>
-          {product.oldPrice ? <span>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(product.oldPrice)}</span> : null}
+          <strong>{formatCurrency(product.price)}</strong>
+          {product.oldPrice ? <span>{formatCurrency(product.oldPrice)}</span> : null}
         </div>
 
         <div className={styles.actions}>
           <button type="button" className={styles.primaryButton} onClick={() => addToCart(product, 1)}>
-            Add to cart
+            {t('Add to cart')}
           </button>
           <Link to={`/product/${product.id}`} className={styles.secondaryButton}>
-            View
+            {t('View')}
           </Link>
         </div>
       </div>
