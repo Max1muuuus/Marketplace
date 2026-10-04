@@ -1,0 +1,33 @@
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 700px);
+  padding: 8px 10px 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.searchBar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 0.8rem 0;
+  font-size: 1rem;
+  outline: none;
+}
+
+.searchBar input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.searchBar button {
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+  color: white;
+  font-weight: 700;
+}

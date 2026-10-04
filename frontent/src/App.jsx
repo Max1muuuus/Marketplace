@@ -1,121 +1,76 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import Header from './components/Header/Header'
+import Footer from './components/Footer/Footer'
+import { AuthProvider } from './context/AuthContext'
+import { CartProvider } from './context/CartContext'
+import { FavoritesProvider } from './context/FavoritesContext'
+
+import HomePage from './pages/Home/HomePage'
+import CatalogPage from './pages/Catalog/CatalogPage'
+import CategoriesPage from './pages/Categories/CategoriesPage'
+import ProductPage from './pages/Product/ProductPage'
+import FavoritesPage from './pages/Favorites/FavoritesPage'
+import CartPage from './pages/Cart/CartPage'
+import CheckoutPage from './pages/Checkout/CheckoutPage'
+import OrdersPage from './pages/Orders/OrdersPage'
+import ProfilePage from './pages/Profile/ProfilePage'
+import LoginPage from './pages/Login/LoginPage'
+import RegisterPage from './pages/Register/RegisterPage'
+import AboutPage from './pages/About/AboutPage'
+import ContactsPage from './pages/Contacts/ContactsPage'
+import SearchPage from './pages/Search/SearchPage'
+import NotFoundPage from './pages/NotFound/NotFoundPage'
+
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [language, setLanguage] = useState(() => localStorage.getItem('marketplace-language') || 'en')
+  const [theme, setTheme] = useState('dark')
+
+  const changeLanguage = (nextLanguage) => {
+    setLanguage(nextLanguage)
+    localStorage.setItem('marketplace-language', nextLanguage)
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <AuthProvider>
+      <CartProvider>
+        <FavoritesProvider>
+          <BrowserRouter>
+            <div className={`app-shell ${theme === 'dark' ? 'theme-dark' : 'theme-light'}`}>
+              <Header
+                language={language}
+                setLanguage={changeLanguage}
+                theme={theme}
+                setTheme={setTheme}
+              />
+              <main className="page-shell">
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/catalog" element={<CatalogPage />} />
+                  <Route path="/categories" element={<CategoriesPage />} />
+                  <Route path="/product/:id" element={<ProductPage />} />
+                  <Route path="/favorites" element={<FavoritesPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/orders" element={<OrdersPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/contacts" element={<ContactsPage />} />
+                  <Route path="/search" element={<SearchPage />} />
+                  <Route path="/404" element={<NotFoundPage />} />
+                  <Route path="*" element={<Navigate to="/404" replace />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          </BrowserRouter>
+        </FavoritesProvider>
+      </CartProvider>
+    </AuthProvider>
   )
 }
 
