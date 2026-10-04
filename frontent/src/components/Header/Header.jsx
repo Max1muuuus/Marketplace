@@ -3,13 +3,14 @@ import styles from './Header.module.scss'
 import { useCart } from '../../context/CartContext'
 import { useAuth } from '../../context/AuthContext'
 import { useFavorites } from '../../context/FavoritesContext'
+import { useLanguage } from '../../context/useLanguage'
 
 const navItems = [
-  { to: '/', en: 'Home', uk: 'Головна' },
-  { to: '/catalog', en: 'Catalog', uk: 'Каталог' },
-  { to: '/categories', en: 'Categories', uk: 'Категорії' },
-  { to: '/about', en: 'About', uk: 'Про нас' },
-  { to: '/contacts', en: 'Contacts', uk: 'Контакти' },
+  { to: '/', label: 'Home' },
+  { to: '/catalog', label: 'Catalog' },
+  { to: '/categories', label: 'Categories' },
+  { to: '/about', label: 'About' },
+  { to: '/contacts', label: 'Contacts' },
 ]
 
 const labels = {
@@ -21,7 +22,7 @@ export default function Header({ language, setLanguage, theme, setTheme }) {
   const { itemCount } = useCart()
   const { user, logout } = useAuth()
   const { favorites } = useFavorites()
-  const text = labels[language] || labels.en
+  const { t } = useLanguage()
 
   return (
     <header className={styles.header}>
@@ -31,20 +32,20 @@ export default function Header({ language, setLanguage, theme, setTheme }) {
           <span className={styles.brandName}>MarketHub</span>
         </Link>
 
-        <nav className={styles.nav} aria-label="Main navigation">
+        <nav className={styles.nav} aria-label={t('Main navigation')}>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
             >
-              {item[language] || item.en}
+              {t(item.label)}
             </NavLink>
           ))}
         </nav>
 
         <div className={styles.actions}>
-          <div className={styles.switchGroup} aria-label="Language switcher">
+          <div className={styles.switchGroup} aria-label={t('Language switcher')}>
             <button
               type="button"
               className={language === 'en' ? styles.activeSwitch : ''}
@@ -66,28 +67,29 @@ export default function Header({ language, setLanguage, theme, setTheme }) {
             className={styles.themeButton}
             onClick={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
           >
-            {theme === 'dark' ? text.dark : text.light}
+            {t(theme === 'dark' ? 'Dark' : 'Light')}
           </button>
 
-          <Link to="/search" className={styles.searchButton}>{text.search}</Link>
-          <Link to="/favorites" className={styles.iconButton} aria-label={text.favorites}>
+          <Link to="/search" className={styles.searchButton}>{t('Search')}</Link>
+          <Link to="/favorites" className={styles.iconButton} aria-label={t('Favorites')}>
             ♥
             {favorites.length > 0 ? <span>{favorites.length}</span> : null}
           </Link>
-          <Link to="/cart" className={styles.iconButton} aria-label={text.cart}>
+          <Link to="/cart" className={styles.iconButton} aria-label={t('Cart')}>
             🛒
             {itemCount > 0 ? <span>{itemCount}</span> : null}
           </Link>
 
           {user ? (
             <div className={styles.userMenu}>
+              {user.role === 'admin' ? <Link to="/admin" className={styles.profileButton}>{t('Admin')}</Link> : <Link to="/my-products" className={styles.profileButton}>{t('My products')}</Link>}
               <Link to="/profile" className={styles.profileButton}>{user.name}</Link>
-              <button type="button" className={styles.logoutButton} onClick={logout}>{text.logout}</button>
+              <button type="button" className={styles.logoutButton} onClick={logout}>{t('Logout')}</button>
             </div>
           ) : (
             <div className={styles.userMenu}>
-              <Link to="/login" className={styles.profileButton}>{text.login}</Link>
-              <Link to="/register" className={styles.registerButton}>{text.register}</Link>
+              <Link to="/login" className={styles.profileButton}>{t('Login')}</Link>
+              <Link to="/register" className={styles.registerButton}>{t('Register')}</Link>
             </div>
           )}
         </div>

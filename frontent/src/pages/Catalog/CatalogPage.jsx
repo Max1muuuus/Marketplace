@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
 import SearchBar from '../../components/Search/SearchBar'
 import { fetchCategories, fetchProducts } from '../../services/mockApi' // Переконайся в правильності шляху
+import { useLanguage } from '../../context/useLanguage'
+
 import styles from './CatalogPage.module.scss'
 
 export default function CatalogPage() {
+  const { t } = useLanguage()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [productsList, setProductsList] = useState([])
@@ -20,6 +23,7 @@ export default function CatalogPage() {
     category: searchParams.get('category') || '',
     brand: '',
     rating: '',
+    status: '',
     minPrice: '',
     maxPrice: '',
   })
@@ -59,7 +63,7 @@ export default function CatalogPage() {
       } else if (sort === 'rating') {
         sortBy = 'rating'
         sortOrder = 'desc'
-      }
+    }
 
       const data = await fetchProducts({
         search,
@@ -95,25 +99,35 @@ export default function CatalogPage() {
     } else {
       setSearchParams({})
     }
-  }
+
+    if (sort === 'price-asc') {
+      nextProducts.sort((a, b) => a.price - b.price)
+    } else if (sort === 'price-desc') {
+      nextProducts.sort((a, b) => b.price - a.price)
+    } else if (sort === 'rating') {
+      nextProducts.sort((a, b) => b.rating - a.rating)
+    }
+
+    return nextProducts
+  }, [search, filters, sort, products, categories, selectedCategory])
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
         <section className={styles.topbar}>
           <div>
-            <span className={styles.eyebrow}>Catalog</span>
-            <h1>All gadgets and gear</h1>
+            <span className={styles.eyebrow}>{t('Catalog')}</span>
+            <h1>{t('All gadgets and gear')}</h1>
           </div>
-          <SearchBar value={search} onChange={setSearch} onSubmit={(e) => e.preventDefault()} />
+          <SearchBar value={search} onChange={setSearch} onSubmit={(event) => event.preventDefault()} />
         </section>
 
         <div className={styles.layout}>
           <aside className={styles.sidebar}>
             <div className={styles.filterGroup}>
-              <h3>Category</h3>
+              <h3>{t('Category')}</h3>
               <select value={filters.category} onChange={handleCategoryChange}>
-                <option value="">All categories</option>
+                <option value="">{t('All categories')}</option>
                 {categoriesList.map((cat) => (
                   <option key={cat.id || cat.slug} value={cat.slug || cat.id}>
                     {cat.name}
@@ -123,12 +137,12 @@ export default function CatalogPage() {
             </div>
 
             <div className={styles.filterGroup}>
-              <h3>Brand</h3>
+              <h3>{t('Brand')}</h3>
               <select
                 value={filters.brand}
                 onChange={(e) => setFilters((curr) => ({ ...curr, brand: e.target.value }))}
               >
-                <option value="">Any brand</option>
+                <option value="">{t('Any brand')}</option>
                 {brands.map((brand) => (
                   <option key={brand} value={brand}>
                     {brand}
@@ -138,17 +152,17 @@ export default function CatalogPage() {
             </div>
 
             <div className={styles.filterGroup}>
-              <h3>Price</h3>
+              <h3>{t('Price')}</h3>
               <div className={styles.inlineInputs}>
                 <input
                   type="number"
-                  placeholder="Min"
+                  placeholder={t('Min')}
                   value={filters.minPrice}
                   onChange={(e) => setFilters((curr) => ({ ...curr, minPrice: e.target.value }))}
                 />
                 <input
                   type="number"
-                  placeholder="Max"
+                  placeholder={t('Max')}
                   value={filters.maxPrice}
                   onChange={(e) => setFilters((curr) => ({ ...curr, maxPrice: e.target.value }))}
                 />
@@ -156,44 +170,41 @@ export default function CatalogPage() {
             </div>
 
             <div className={styles.filterGroup}>
-              <h3>Rating</h3>
+              <h3>{t('Rating')}</h3>
               <select
                 value={filters.rating}
                 onChange={(e) => setFilters((curr) => ({ ...curr, rating: e.target.value }))}
               >
-                <option value="">All ratings</option>
+                <option value="">{t('All ratings')}</option>
                 <option value="4.5">4.5+</option>
                 <option value="4.7">4.7+</option>
                 <option value="4.9">4.9+</option>
+              </select>
+            </div>
+
+            <div className={styles.filterGroup}>
+              <h3>{t('Availability')}</h3>
+              <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
+                <option value="">{t('Any')}</option>
+                <option value="in-stock">{t('In stock')}</option>
+                <option value="limited">{t('Limited')}</option>
               </select>
             </div>
           </aside>
 
           <main className={styles.results}>
             <div className={styles.toolbar}>
-              <p>{loading ? 'Loading...' : `${productsList.length} products found`}</p>
+                          <p>{productsList.length} {t('products found')}</p>
               <div className={styles.controls}>
-                <select value={sort} onChange={(e) => setSort(e.target.value)}>
-                  <option value="featured">Featured</option>
-                  <option value="price-asc">Price: low to high</option>
-                  <option value="price-desc">Price: high to low</option>
-                  <option value="rating">Top rated</option>
+                <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                  <option value="featured">{t('Featured')}</option>
+                  <option value="price-asc">{t('Price: low to high')}</option>
+                  <option value="price-desc">{t('Price: high to low')}</option>
+                  <option value="rating">{t('Top rated')}</option>
                 </select>
                 <div className={styles.viewToggle}>
-                  <button
-                    type="button"
-                    className={view === 'grid' ? styles.active : ''}
-                    onClick={() => setView('grid')}
-                  >
-                    Grid
-                  </button>
-                  <button
-                    type="button"
-                    className={view === 'list' ? styles.active : ''}
-                    onClick={() => setView('list')}
-                  >
-                    List
-                  </button>
+                  <button type="button" className={view === 'grid' ? styles.active : ''} onClick={() => setView('grid')}>{t('Grid')}</button>
+                  <button type="button" className={view === 'list' ? styles.active : ''} onClick={() => setView('list')}>{t('List')}</button>
                 </div>
               </div>
             </div>
@@ -206,7 +217,7 @@ export default function CatalogPage() {
                   <ProductCard key={product.id} product={product} />
                 ))
               ) : (
-                <div className={styles.emptyState}>No products match your search. Try another filter.</div>
+                <div className={styles.emptyState}>{t('No products match your search. Try another filter.')}</div>
               )}
             </div>
           </main>

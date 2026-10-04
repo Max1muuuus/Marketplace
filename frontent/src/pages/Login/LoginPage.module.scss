@@ -74,6 +74,18 @@ small {
   color: rgba(255, 255, 255, 0.7);
 }
 
+.card .hint {
+  margin: 16px 0 0;
+  padding: 12px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+
+.hint strong {
+  color: #a5f3fc;
+}
+
 .card a {
   color: #c4b5fd;
   text-decoration: none;

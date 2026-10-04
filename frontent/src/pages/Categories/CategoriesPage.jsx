@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchCategories } from '../../services/mockApi' // Переконайся в правильності шляху
+import { useLanguage } from '../../context/useLanguage'
+
 import styles from './CategoriesPage.module.scss'
 
 export default function CategoriesPage() {
   const [categoriesList, setCategoriesList] = useState([])
   const [loading, setLoading] = useState(true)
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -26,14 +29,14 @@ export default function CategoriesPage() {
     <div className={styles.page}>
       <div className={styles.container}>
         <div className={styles.heading}>
-          <span className={styles.eyebrow}>Categories</span>
-          <h1>Browse digital essentials</h1>
+          <span className={styles.eyebrow}>{t('Categories')}</span>
+          <h1>{t('Browse digital essentials')}</h1>
         </div>
 
         {loading ? (
           <div className={styles.emptyState}>Loading categories...</div>
         ) : (
-          <div className={styles.grid}>
+        <div className={styles.grid}>
             {categoriesList.map((category) => {
               const categoryKey = category.slug || category.id
 
@@ -46,11 +49,11 @@ export default function CategoriesPage() {
                   {category.icon && <span className={styles.icon}>{category.icon}</span>}
                   <h3>{category.name}</h3>
                   {category.description && <p>{category.description}</p>}
-                  <strong>Explore</strong>
-                </Link>
+                  <strong>{t('Explore')}</strong>
+            </Link>
               )
             })}
-          </div>
+        </div>
         )}
       </div>
     </div>

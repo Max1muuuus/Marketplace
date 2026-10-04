@@ -4,13 +4,17 @@ import ProductCard from '../../components/ProductCard/ProductCard'
 import { fetchProductById, fetchProducts, fetchReviews, fetchSellerById } from '../../services/mockApi'
 import { useCart } from '../../context/CartContext'
 import { useFavorites } from '../../context/FavoritesContext'
+import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/useLanguage'
 import styles from './ProductPage.module.scss'
+import { getProducts, saveProductReview } from '../../services/marketplaceStore'
 
 export default function ProductPage() {
   const { id } = useParams()
   const { addToCart } = useCart()
   const { toggleFavorite, isFavorite } = useFavorites()
-  
+  const { user } = useAuth()
+  const { t, formatCurrency } = useLanguage()
   const [product, setProduct] = useState(null)
   const [seller, setSeller] = useState(null)
   const [reviews, setReviews] = useState([])
@@ -29,13 +33,13 @@ export default function ProductPage() {
       setQuantity(1)
 
       try {
-        const currentProduct = await fetchProductById(id)
+      const currentProduct = await fetchProductById(id)
 
         if (!active) return
 
-        setProduct(currentProduct)
+      setProduct(currentProduct)
 
-        if (currentProduct) {
+      if (currentProduct) {
           // Переконуємося, що беремо саме ID продавця (з урахуванням регістру C# / JS)
           const rawSellerId = currentProduct.sellerId ?? currentProduct.SellerId
 
@@ -58,7 +62,7 @@ export default function ProductPage() {
           ])
 
           if (active) {
-            setSeller(currentSeller)
+        setSeller(currentSeller)
             setReviews(productReviews || [])
 
             const filteredRelated = (Array.isArray(categoryProducts) ? categoryProducts : [])
@@ -66,18 +70,19 @@ export default function ProductPage() {
               .slice(0, 4)
 
             setRelated(filteredRelated)
-          }
         }
+      }
       } catch (error) {
         console.error('Error loading product details:', error)
       } finally {
         if (active) {
           setLoading(false)
-        }
+    }
       }
     }
 
     load()
+  }, [id, user?.id])
 
     return () => {
       active = false
@@ -95,7 +100,7 @@ export default function ProductPage() {
   }
 
   if (!product) {
-    return <div className={styles.empty}>Product not found.</div>
+    return <div className={styles.empty}>{t('Product not found.')}</div>
   }
 
   // Обробка полів товару для обидвох регістрів
@@ -158,14 +163,8 @@ export default function ProductPage() {
             </div>
 
             <div className={styles.priceRow}>
-              <strong>
-                {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(productPrice)}
-              </strong>
-              {productOldPrice ? (
-                <span>
-                  {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 0 }).format(productOldPrice)}
-                </span>
-              ) : null}
+              <strong>{formatCurrency(productPrice)}</strong>
+              {productOldPrice ? <span>{formatCurrency(productOldPrice)}</span> : null}
             </div>
 
             <p className={styles.description}>{productDescription}</p>
@@ -196,26 +195,47 @@ export default function ProductPage() {
         </div>
 
         {Object.keys(specs).length > 0 && (
-          <section className={styles.specsSection}>
-            <div className={styles.sectionHeader}>
-              <h2>Specifications</h2>
-            </div>
-            <div className={styles.specGrid}>
+        <section className={styles.specsSection}>
+          <div className={styles.sectionHeader}>
+            <h2>{t('Specifications')}</h2>
+          </div>
+          <div className={styles.specGrid}>
               {Object.entries(specs).map(([key, value]) => (
-                <div key={key} className={styles.specItem}>
+              <div key={key} className={styles.specItem}>
                   <span>{key}</span>
                   <strong>{value}</strong>
-                </div>
-              ))}
-            </div>
-          </section>
+              </div>
+            ))}
+          </div>
+        </section>
         )}
 
         <section className={styles.reviewsSection}>
           <div className={styles.sectionHeader}>
-            <h2>Customer reviews</h2>
+            <h2>{t('Customer reviews')}</h2>
             <span className={styles.rating}>★ {ratingAverage}</span>
           </div>
+
+          {user ? (
+            <form className={styles.reviewForm} onSubmit={submitReview}>
+              <label>
+                {t('Your rating')}
+                <select value={reviewRating} onChange={(event) => { setReviewRating(event.target.value); setReviewSaved(false) }}>
+                  {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} / 5</option>)}
+                </select>
+              </label>
+              <label>
+                {t('Write a review')}
+                <textarea required maxLength="1000" value={reviewText} placeholder={t('Share your experience with this product')} onChange={(event) => { setReviewText(event.target.value); setReviewSaved(false) }} />
+              </label>
+              <div className={styles.reviewFormAction}>
+                <button type="submit">{t(reviews.some((review) => review.userId === user.id) ? 'Update review' : 'Submit review')}</button>
+                {reviewSaved ? <span role="status">{t('Review saved.')}</span> : null}
+              </div>
+            </form>
+          ) : (
+            <p className={styles.reviewSignIn}><Link to="/login">{t('Log in')}</Link> {t('to leave a review.')}</p>
+          )}
 
           <div className={styles.reviewList}>
             {reviews.map((review) => (
@@ -232,17 +252,17 @@ export default function ProductPage() {
         </section>
 
         {related.length > 0 && (
-          <section className={styles.relatedSection}>
-            <div className={styles.sectionHeader}>
-              <h2>Similar items</h2>
-              <Link to="/catalog">View all</Link>
-            </div>
-            <div className={styles.relatedGrid}>
-              {related.map((item) => (
+        <section className={styles.relatedSection}>
+          <div className={styles.sectionHeader}>
+            <h2>{t('Similar items')}</h2>
+            <Link to="/catalog">{t('View all')}</Link>
+          </div>
+          <div className={styles.relatedGrid}>
+            {related.map((item) => (
                 <ProductCard key={item.id || item.Id} product={item} />
-              ))}
-            </div>
-          </section>
+            ))}
+          </div>
+        </section>
         )}
       </div>
     </div>

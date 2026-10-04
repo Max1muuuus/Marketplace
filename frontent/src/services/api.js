@@ -27,16 +27,16 @@ export const api = {
   get: (path, options = {}) => request(path, { ...options, method: 'GET' }),
   post: (path, body, options = {}) =>
     request(path, {
-      ...options,
-      method: 'POST',
-      body: JSON.stringify(body),
-    }),
+    ...options,
+    method: 'POST',
+    body: JSON.stringify(body),
+  }),
   put: (path, body, options = {}) =>
     request(path, {
-      ...options,
-      method: 'PUT',
-      body: JSON.stringify(body),
-    }),
+    ...options,
+    method: 'PUT',
+    body: JSON.stringify(body),
+  }),
   del: (path, options = {}) => request(path, { ...options, method: 'DELETE' }),
   delete: (path, options = {}) => request(path, { ...options, method: 'DELETE' }),
 }

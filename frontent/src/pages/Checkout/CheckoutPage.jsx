@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { useAuth } from '../../context/AuthContext'
 import { createOrderRequest } from '../../services/mockApi'
+import { useLanguage } from '../../context/useLanguage'
+
 import styles from './CheckoutPage.module.scss'
 
 const initialForm = {
@@ -19,7 +21,8 @@ const initialForm = {
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { items, subtotal, getCheckoutPayload, clearCart } = useCart()
+    const { items, subtotal, getCheckoutPayload, clearCart } = useCart()
+    const { t, formatCurrency } = useLanguage()
 
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState({})
@@ -87,7 +90,7 @@ export default function CheckoutPage() {
         subtotal,
         shippingFee: shipping,
         totalAmount: total,
-      }
+  }
 
       await createOrderRequest(orderPayload)
 
@@ -113,8 +116,8 @@ export default function CheckoutPage() {
     <div className={styles.page}>
       <div className={styles.container}>
         <div className={styles.heading}>
-          <span className={styles.eyebrow}>Checkout</span>
-          <h1>Complete your order</h1>
+          <span className={styles.eyebrow}>{t('Checkout')}</span>
+          <h1>{t('Complete your order')}</h1>
         </div>
 
         {submitError && <div className={styles.errorMessage}>{submitError}</div>}
@@ -144,7 +147,7 @@ export default function CheckoutPage() {
 
             <div className={styles.grid}>
               <div>
-                <label>Email</label>
+                <label>{t('Email')}</label>
                 <input
                   type="email"
                   value={form.email}
@@ -154,7 +157,7 @@ export default function CheckoutPage() {
                 {errors.email ? <small>{errors.email}</small> : null}
               </div>
               <div>
-                <label>Phone</label>
+                <label>{t('Phone')}</label>
                 <input
                   value={form.phone}
                   onChange={(event) => updateField('phone', event.target.value)}
@@ -166,7 +169,7 @@ export default function CheckoutPage() {
 
             <div className={styles.grid}>
               <div>
-                <label>City</label>
+                <label>{t('City')}</label>
                 <input
                   value={form.city}
                   onChange={(event) => updateField('city', event.target.value)}
@@ -175,7 +178,7 @@ export default function CheckoutPage() {
                 {errors.city ? <small>{errors.city}</small> : null}
               </div>
               <div>
-                <label>Address</label>
+                <label>{t('Address')}</label>
                 <input
                   value={form.address}
                   onChange={(event) => updateField('address', event.target.value)}
@@ -186,7 +189,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className={styles.optionGroup}>
-              <label>Delivery method</label>
+              <label>{t('Delivery method')}</label>
               <select
                 value={form.delivery}
                 onChange={(event) => updateField('delivery', event.target.value)}
@@ -199,7 +202,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className={styles.optionGroup}>
-              <label>Payment method</label>
+              <label>{t('Payment method')}</label>
               <select
                 value={form.payment}
                 onChange={(event) => updateField('payment', event.target.value)}
@@ -221,7 +224,7 @@ export default function CheckoutPage() {
           </form>
 
           <aside className={styles.summary}>
-            <h3>Order summary</h3>
+            <h3>{t('Order summary')}</h3>
             <div className={styles.productList}>
               {items.length ? (
                 items.map((item) => (
@@ -233,26 +236,15 @@ export default function CheckoutPage() {
                   </div>
                 ))
               ) : (
-                <p>Your cart is empty.</p>
+                <p>{t('Your cart is empty.')}</p>
               )}
             </div>
 
-            <div className={styles.line}>
-              <span>Subtotal</span>
-              <strong>{formatCurrency(subtotal)}</strong>
-            </div>
-            <div className={styles.line}>
-              <span>Delivery</span>
-              <strong>{formatCurrency(shipping)}</strong>
-            </div>
-            <div className={styles.lineTotal}>
-              <span>Total</span>
-              <strong>{formatCurrency(total)}</strong>
-            </div>
+            <div className={styles.line}><span>{t('Subtotal')}</span><strong>{formatCurrency(subtotal)}</strong></div>
+            <div className={styles.line}><span>{t('Delivery')}</span><strong>{formatCurrency(shipping)}</strong></div>
+            <div className={styles.lineTotal}><span>{t('Total')}</span><strong>{formatCurrency(total)}</strong></div>
 
-            <Link to="/cart" className={styles.secondaryButton}>
-              Back to cart
-            </Link>
+            <Link to="/cart" className={styles.secondaryButton}>{t('Back to cart')}</Link>
           </aside>
         </div>
       </div>

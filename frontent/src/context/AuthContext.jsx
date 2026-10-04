@@ -3,6 +3,21 @@ import { loginRequest, registerRequest } from '../services/mockApi'
 
 const AuthContext = createContext(null)
 
+function normalizeRoleSuffix(name, role) {
+  const suffix = role === 'admin' ? ' Admin' : role === 'customer' ? ' User' : ''
+  return suffix && name?.endsWith(suffix) ? name.slice(0, -suffix.length).trim() : name
+}
+
+function readSavedUser() {
+  try {
+    const savedUser = JSON.parse(localStorage.getItem('marketplace-user') || 'null')
+    return savedUser ? { ...savedUser, name: normalizeRoleSuffix(savedUser.name, savedUser.role) } : null
+  } catch {
+    localStorage.removeItem('marketplace-user')
+    return null
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('marketplace-user')
@@ -37,7 +52,7 @@ export function AuthProvider({ children }) {
   })
 
   const logout = useCallback(() => {
-    localStorage.removeItem('marketplace-token')
+      localStorage.removeItem('marketplace-token')
     localStorage.removeItem('marketplace-user')
     setUser(null)
     setToken('')
@@ -55,15 +70,16 @@ export function AuthProvider({ children }) {
 
         if (response.token) {
           localStorage.setItem('marketplace-token', response.token)
-        }
+    }
+  }, [token])
 
         setToken(response.token || '')
-        setUser(nextUser)
-        return nextUser
+    setUser(nextUser)
+    return nextUser
       } catch (error) {
         logout()
         throw error
-      }
+  }
     },
     [logout]
   )
@@ -75,26 +91,26 @@ export function AuthProvider({ children }) {
       )
 
       try {
-        const response = await registerRequest({
+    const response = await registerRequest({
           firstName: payload.firstName || firstName,
           lastName: payload.lastName || lastName,
-          email: payload.email,
+      email: payload.email,
           password: payload.password,
-        })
+    })
 
         const nextUser = mapUser(response.user)
 
         if (response.token) {
           localStorage.setItem('marketplace-token', response.token)
-        }
+    }
 
         setToken(response.token || '')
-        setUser(nextUser)
-        return nextUser
+    setUser(nextUser)
+    return nextUser
       } catch (error) {
         logout()
         throw error
-      }
+  }
     },
     [logout]
   )

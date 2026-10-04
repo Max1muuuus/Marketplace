@@ -11,16 +11,24 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace backend.Services;
 
+public interface IAuthService
+{
+    Task<AuthResponse?> RegisterAsync(RegisterRequest request);
+    Task<AuthResponse?> LoginAsync(LoginRequest request);
+    Task<User?> GetUserByEmailAsync(string email);
+}
 
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
+    private readonly AppDbContext _context;
 
     public AuthService(IUserRepository userRepository, IConfiguration configuration, AppDbContext context)
     {
         _userRepository = userRepository;
         _configuration = configuration;
+        _context = context;
     }
 
     public async Task<AuthDto?> RegisterAsync(RegisterDto request)
@@ -48,6 +56,7 @@ public class AuthService : IAuthService
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
         await _userRepository.AddAsync(user);
+        await _userRepository.SaveChangesAsync();
 
         return CreateAuthResponse(user);
     }
@@ -95,6 +104,7 @@ public class AuthService : IAuthService
             Token = token,
             User = new UserDto
             {
+                Id = user.Id,
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,

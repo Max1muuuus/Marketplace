@@ -23,13 +23,18 @@ public class OrdersController : ControllerBase
     {
         int? userId = ClaimsPrincipalExtensions.GetUserId(User);
 
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
+        {
+            userId = parsedUserId;
+        }
+
         return Ok(await _orderService.GetOrdersAsync(userId));
     }
 
     [HttpPost("postorders")]
     [Authorize]
     public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderDto request)
-    {
+        {
         int? userId = ClaimsPrincipalExtensions.GetUserId(User);
 
         var result = await _orderService.CreateOrderAsync(userId, request);

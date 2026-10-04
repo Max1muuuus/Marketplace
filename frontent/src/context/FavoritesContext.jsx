@@ -55,7 +55,7 @@ export function FavoritesProvider({ children }) {
           return prev.filter((item) => (typeof item === 'object' ? item.id !== productId : item !== productId))
         } else {
           return typeof product === 'object' ? [...prev, product] : prev
-        }
+  }
       })
 
       if (typeof product !== 'object') {

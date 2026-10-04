@@ -253,6 +253,72 @@
   gap: 16px;
 }
 
+<<<<<<< HEAD
+=======
+.reviewForm {
+  display: grid;
+  grid-template-columns: minmax(130px, 180px) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.reviewForm label {
+  display: grid;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.9rem;
+}
+
+.reviewForm select,
+.reviewForm textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: inherit;
+}
+
+.reviewForm option {
+  color: #101827;
+  background: #ffffff;
+}
+
+.reviewForm textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.reviewFormAction {
+  display: grid;
+  gap: 8px;
+}
+
+.reviewFormAction button {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reviewFormAction span,
+.reviewSignIn {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.reviewSignIn a {
+  color: #c4b5fd;
+}
+
+>>>>>>> origin/main
 .reviewCard {
   padding: 20px 18px;
   border-radius: 20px;
@@ -315,4 +381,11 @@
     flex-direction: row;
     overflow-x: auto;
   }
+<<<<<<< HEAD
+=======
+
+  .reviewForm {
+    grid-template-columns: 1fr;
+  }
+>>>>>>> origin/main
 }

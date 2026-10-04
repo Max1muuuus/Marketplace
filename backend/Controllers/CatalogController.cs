@@ -41,4 +41,7 @@ public class CatalogController : ControllerBase
     public async Task<ActionResult<List<ProductDto>>> GetFeatured(int n)
         => Ok(await _catalogService.GetFeaturedAsync(n));
 
+    [HttpGet("popular")]
+    public async Task<ActionResult<List<ProductDto>>> GetPopular()
+        => Ok(await _catalogService.GetPopularAsync());
 }

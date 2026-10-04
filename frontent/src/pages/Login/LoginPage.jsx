@@ -1,11 +1,15 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import styles from "./LoginPage.module.scss";
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/useLanguage'
+import styles from './LoginPage.module.scss'
 
 export default function LoginPage() {
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const navigate = useNavigate()
+  const { login } = useAuth()
+  const { t } = useLanguage()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [errors, setErrors] = useState({})
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -47,7 +51,7 @@ export default function LoginPage() {
     <div className={styles.page}>
       <div className={styles.card}>
         <span className={styles.eyebrow}>Welcome back</span>
-        <h1>Login</h1>
+        <h1>{t('Login')}</h1>
 
         {errors.server && (
           <div className={styles.serverError}>{errors.server}</div>
@@ -55,7 +59,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div className={styles.field}>
-            <label>Email</label>
+            <label>{t('Email')}</label>
             <input
               type="email"
               value={form.email}
@@ -67,7 +71,7 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.field}>
-            <label>Password</label>
+            <label>{t('Password')}</label>
             <input
               type="password"
               value={form.password}
@@ -86,9 +90,9 @@ export default function LoginPage() {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-
+        <p className={styles.hint}>{t('Admin demo:')} <strong>admin@markethub.com</strong> / <strong>admin123</strong></p>
         <p>
-          No account yet? <Link to="/register">Create one</Link>
+          {t('No account yet?')} <Link to="/register">{t('Create one')}</Link>
         </p>
       </div>
     </div>

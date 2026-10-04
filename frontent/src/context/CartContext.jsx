@@ -53,7 +53,7 @@ export function CartProvider({ children }) {
       if (data) setItems(extractItems(data))
     } catch (error) {
       console.error('Помилка додавання товару в кошик:', error)
-    }
+      }
   }, [])
 
   const updateQuantity = useCallback(async (productId, delta) => {
@@ -71,7 +71,7 @@ export function CartProvider({ children }) {
       if (data) setItems(extractItems(data))
     } catch (error) {
       console.error('Помилка видалення товару:', error)
-    }
+  }
   }, [])
 
   const clearCart = useCallback(async () => {
@@ -95,7 +95,7 @@ export function CartProvider({ children }) {
       return {
         productId: cleanProductId,
         quantity: item.quantity,
-      }
+  }
     })
   }, [items])
 

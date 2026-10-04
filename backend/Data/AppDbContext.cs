@@ -52,6 +52,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CategoryEntity>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasMaxLength(100);
             entity.Property(x => x.Name).HasMaxLength(150);
             entity.Property(x => x.Slug).HasMaxLength(100);
             entity.HasIndex(x => x.Slug).IsUnique();
