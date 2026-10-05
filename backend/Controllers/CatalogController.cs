@@ -20,16 +20,9 @@ public class CatalogController : ControllerBase
         => Ok(await _catalogService.GetCategoriesAsync());
 
     [HttpGet("products")]
-    public async Task<ActionResult<List<ProductDto>>> GetProducts(
-        [FromQuery] string? search,
-        [FromQuery] string? category,
-        [FromQuery] string? brand,
-        [FromQuery] decimal? minPrice,
-        [FromQuery] decimal? maxPrice,
-        [FromQuery] double? rating,
-        [FromQuery] string? sort)
+    public async Task<ActionResult<List<ProductDto>>> GetProducts([FromQuery] GetProductsDto request)
     {
-        var result = await _catalogService.GetProductsAsync(search, category, brand, minPrice, maxPrice, rating, sort);
+        var result = await _catalogService.GetProductsAsync(request);
         return Ok(result);
     }
 
@@ -44,13 +37,9 @@ public class CatalogController : ControllerBase
     public async Task<ActionResult<List<ReviewDto>>> GetReviews(int id)
         => Ok(await _catalogService.GetReviewsByProductIdAsync(id));
 
-    [HttpGet("featured")]
-    public async Task<ActionResult<List<ProductDto>>> GetFeatured()
-        => Ok(await _catalogService.GetFeaturedAsync());
-
-    [HttpGet("newest")]
-    public async Task<ActionResult<List<ProductDto>>> GetNewest()
-        => Ok(await _catalogService.GetNewestAsync());
+    [HttpGet("featured/{n:int}")]
+    public async Task<ActionResult<List<ProductDto>>> GetFeatured(int n)
+        => Ok(await _catalogService.GetFeaturedAsync(n));
 
     [HttpGet("popular")]
     public async Task<ActionResult<List<ProductDto>>> GetPopular()

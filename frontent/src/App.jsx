@@ -30,9 +30,14 @@ import { useAuth } from './context/AuthContext'
 import './App.css'
 
 function AdminRoute({ children }) {
-  const { user } = useAuth()
-  return user?.role === 'admin' ? children : <Navigate to={user ? '/profile' : '/login'} replace />
+    const { user } = useAuth()
+    return user?.role === 'admin' ? children : <Navigate to={user ? '/profile' : '/login'} replace />
 }
+
+function App() {
+
+    const { language, setLanguage } = useLanguage()
+    const [theme, setTheme] = useState('dark')
 
 function AppContent() {
   const { language, setLanguage } = useLanguage()

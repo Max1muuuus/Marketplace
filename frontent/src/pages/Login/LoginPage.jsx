@@ -11,43 +11,84 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
 
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    const nextErrors = {}
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
-    if (!form.email) nextErrors.email = 'Email is required'
-    if (!form.password) nextErrors.password = 'Password is required'
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const nextErrors = {};
+
+    if (!form.email.trim()) nextErrors.email = "Email is required";
+    if (!form.password) nextErrors.password = "Password is required";
 
     if (Object.keys(nextErrors).length) {
-      setErrors(nextErrors)
-      return
+      setErrors(nextErrors);
+      return;
     }
 
     try {
-      const user = await login({ email: form.email, password: form.password, name: 'Demo' })
-      navigate(user.role === 'admin' ? '/admin' : '/')
+      setLoading(true);
+      setErrors({});
+
+      await login({
+        email: form.email.trim(),
+        password: form.password,
+      });
+
+      navigate("/");
     } catch (error) {
-      setErrors({ password: error.message || 'Login failed. Please check your credentials.' })
+      const serverMessage =
+        error.response?.data?.message ||
+        "Login failed. Please check your credentials.";
+      setErrors({ server: serverMessage });
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <span className={styles.eyebrow}>{t('Welcome back')}</span>
+        <span className={styles.eyebrow}>Welcome back</span>
         <h1>{t('Login')}</h1>
+
+        {errors.server && (
+          <div className={styles.serverError}>{errors.server}</div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className={styles.field}>
             <label>{t('Email')}</label>
-            <input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-            {errors.email ? <small>{t(errors.email)}</small> : null}
+            <input
+              type="email"
+              value={form.email}
+              onChange={(event) =>
+                setForm({ ...form, email: event.target.value })
+              }
+            />
+            {errors.email ? <small>{errors.email}</small> : null}
           </div>
+
           <div className={styles.field}>
             <label>{t('Password')}</label>
-            <input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-            {errors.password ? <small>{t(errors.password)}</small> : null}
+            <input
+              type="password"
+              value={form.password}
+              onChange={(event) =>
+                setForm({ ...form, password: event.target.value })
+              }
+            />
+            {errors.password ? <small>{errors.password}</small> : null}
           </div>
-          <button type="submit" className={styles.primaryButton}>{t('Login')}</button>
+
+          <button
+            type="submit"
+            className={styles.primaryButton}
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
         </form>
         <p className={styles.hint}>{t('Admin demo:')} <strong>admin@markethub.com</strong> / <strong>admin123</strong></p>
         <p>
@@ -55,5 +96,5 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
-  )
+  );
 }

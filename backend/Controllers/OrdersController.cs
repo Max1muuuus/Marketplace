@@ -1,4 +1,5 @@
 using backend.DTOs;
+using backend.Extensions;
 using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,12 +17,11 @@ public class OrdersController : ControllerBase
         _orderService = orderService;
     }
 
-    [HttpGet]
+    [HttpGet("getorders")]
     [Authorize]
     public async Task<ActionResult<List<OrderDto>>> GetOrders()
     {
-        var userIdClaim = User.FindFirst("sub") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        int? userId = null;
+        int? userId = ClaimsPrincipalExtensions.GetUserId(User);
 
         if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
         {
@@ -31,17 +31,11 @@ public class OrdersController : ControllerBase
         return Ok(await _orderService.GetOrdersAsync(userId));
     }
 
-    [HttpPost]
+    [HttpPost("postorders")]
     [Authorize]
-    public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderRequest request)
-    {
-        var userIdClaim = User.FindFirst("sub") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        int? userId = null;
-
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
+    public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderDto request)
         {
-            userId = parsedUserId;
-        }
+        int? userId = ClaimsPrincipalExtensions.GetUserId(User);
 
         var result = await _orderService.CreateOrderAsync(userId, request);
         if (result == null)
