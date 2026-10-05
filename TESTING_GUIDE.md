@@ -51,6 +51,7 @@
 4. Edit an existing product as Admin and verify the change in Catalog. Delete a disposable product and verify it is no longer publicly listed.
 5. Open Admin > Reviews. Confirm Customer A's product review appears with the product name. Delete a disposable review and confirm it disappears and the product rating/count recalculate.
 6. Open Admin > Users. Confirm both test accounts are present. Admin accounts cannot be deleted from this view; the currently signed-in administrator cannot delete itself.
+7. Open Admin > Orders and delete a disposable order. Accept the confirmation, then confirm the order disappears from Admin and its item rows are removed. Cancel the confirmation once and verify that order remains.
 
 ## Account deletion and cleanup
 

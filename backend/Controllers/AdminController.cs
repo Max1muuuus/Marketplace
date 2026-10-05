@@ -91,6 +91,18 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("orders/{id:int}")]
+    public async Task<IActionResult> DeleteOrder(int id)
+    {
+        var order = await _context.Orders.FindAsync(id);
+        if (order == null)
+            return NotFound();
+
+        _context.Orders.Remove(order);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpPost("categories")]
     public async Task<ActionResult<CategoryDto>> CreateCategory([FromBody] CategoryRequest request)
     {

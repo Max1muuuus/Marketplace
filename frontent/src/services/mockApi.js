@@ -61,6 +61,7 @@ export const updateMyProduct = async (id, product) => api.put(`/catalog/my-produ
 export const deleteMyProduct = async (id) => api.del(`/catalog/my-products/${id}`)
 export const fetchAdminUsers = async () => api.get('/admin/users')
 export const deleteAdminUser = async (id) => api.del(`/admin/users/${id}`)
+export const deleteAdminOrder = async (id) => api.del(`/admin/orders/${id}`)
 export const fetchMarketplaceRatings = async () => api.get('/catalog/ratings')
 export const fetchAccountRating = async () => api.get('/account/rating')
 export const saveAccountRating = async (rating) => api.put('/account/rating', rating)
