@@ -38,8 +38,8 @@ export default function ProductCard({ product }) {
         </div>
 
         <div className={styles.actions}>
-          <button type="button" className={styles.primaryButton} onClick={() => addToCart(product, 1)}>
-            {t('Add to cart')}
+          <button type="button" className={styles.primaryButton} disabled={product.stock <= 0} onClick={() => addToCart(product, 1)}>
+            {t(product.stock > 0 ? 'Add to cart' : 'Out of stock')}
           </button>
           <Link to={`/product/${product.id}`} className={styles.secondaryButton}>
             {t('View')}

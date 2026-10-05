@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend.Data;
 
@@ -11,9 +12,11 @@ using backend.Data;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261005164734_AccountScopedCollections")]
+    partial class AccountScopedCollections
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -87,36 +90,6 @@ namespace backend.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("Favorites");
-                });
-
-            modelBuilder.Entity("backend.Entities.MarketplaceRating", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("MarketplaceRatings");
                 });
 
             modelBuilder.Entity("backend.Entities.Order", b =>
@@ -476,17 +449,6 @@ namespace backend.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("backend.Entities.MarketplaceRating", b =>
-                {
-                    b.HasOne("backend.Entities.User", "User")
-                        .WithMany("MarketplaceRatings")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("backend.Entities.Order", b =>
                 {
                     b.HasOne("backend.Entities.User", "User")
@@ -584,8 +546,6 @@ namespace backend.Migrations
                     b.Navigation("CartItems");
 
                     b.Navigation("Favorites");
-
-                    b.Navigation("MarketplaceRatings");
 
                     b.Navigation("Orders");
 

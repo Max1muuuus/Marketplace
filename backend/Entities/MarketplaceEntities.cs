@@ -29,6 +29,10 @@ public class User
 
     public ICollection<Order> Orders { get; set; } = new List<Order>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
+    public ICollection<Product> Products { get; set; } = new List<Product>();
+    public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+    public ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+    public ICollection<MarketplaceRating> MarketplaceRatings { get; set; } = new List<MarketplaceRating>();
 }
 
 public class Category
@@ -96,6 +100,9 @@ public class Product
 
     public int SellerId { get; set; }
     public Seller? Seller { get; set; }
+
+    public int? OwnerUserId { get; set; }
+    public User? OwnerUser { get; set; }
 
     public decimal Price { get; set; }
     public decimal? OldPrice { get; set; }
@@ -202,7 +209,7 @@ public class OrderItem
     public int OrderId { get; set; }
     public Order? Order { get; set; }
 
-    public int ProductId { get; set; }
+    public int? ProductId { get; set; }
     public Product? Product { get; set; }
 
     [Required]
@@ -214,4 +221,31 @@ public class OrderItem
 
     public decimal Price { get; set; }
     public int Quantity { get; set; }
+}
+
+public class CartItem
+{
+    public int UserId { get; set; }
+    public User? User { get; set; }
+    public int ProductId { get; set; }
+    public Product? Product { get; set; }
+    public int Quantity { get; set; }
+}
+
+public class Favorite
+{
+    public int UserId { get; set; }
+    public User? User { get; set; }
+    public int ProductId { get; set; }
+    public Product? Product { get; set; }
+}
+
+public class MarketplaceRating
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public User? User { get; set; }
+    public int Rating { get; set; }
+    public string Text { get; set; } = string.Empty;
+    public DateTime Date { get; set; } = DateTime.UtcNow;
 }

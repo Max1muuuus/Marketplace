@@ -1,6 +1,25 @@
-import { useState } from 'react'
-import { createProduct, deleteUser, getCategories, getMarketplaceRatings, getOrders, getProducts, getReviews, getSellers, getUsers, saveCollection } from '../../services/marketplaceStore'
-import { useFavorites } from '../../context/FavoritesContext'
+import { useEffect, useState } from 'react'
+import {
+  createCategory,
+  createMyProduct,
+  createSeller,
+  deleteAdminRating,
+  deleteAdminReview,
+  deleteAdminUser,
+  deleteCategory,
+  deleteMyProduct,
+  deleteSeller,
+  fetchAdminRatings,
+  fetchAdminReviews,
+  fetchAdminUsers,
+  fetchCategories,
+  fetchOrders,
+  fetchProducts,
+  fetchSellers,
+  updateCategory,
+  updateMyProduct,
+  updateSeller,
+} from '../../services/mockApi'
 import { useLanguage } from '../../context/useLanguage'
 import styles from './AdminPage.module.scss'
 
@@ -8,13 +27,13 @@ const sections = ['Overview', 'Users', 'Sellers', 'Products', 'Categories', 'Ord
 
 function loadData() {
   return {
-    users: getUsers(),
-    sellers: getSellers(),
-    products: getProducts(),
-    categories: getCategories(),
-    orders: getOrders(),
-    reviews: getReviews(),
-    ratings: getMarketplaceRatings(),
+    users: [],
+    sellers: [],
+    products: [],
+    categories: [],
+    orders: [],
+    reviews: [],
+    ratings: [],
   }
 }
 
@@ -35,34 +54,54 @@ const fieldsFor = (collection, item) => {
 
 export default function AdminPage() {
   const { t, formatCurrency } = useLanguage()
-  const { removeFavorites } = useFavorites()
   const [section, setSection] = useState('Overview')
   const [data, setData] = useState(loadData)
   const [editor, setEditor] = useState(null)
   const [newCategory, setNewCategory] = useState({ name: '', slug: '', icon: '📦', description: '' })
   const [newSeller, setNewSeller] = useState({ name: '', location: '', description: '' })
 
-  const refresh = () => setData(loadData())
-  const updateEntity = (collection, id, changes) => {
-    const next = data[collection].map((item) => item.id === id ? { ...item, ...changes } : item)
-    saveCollection(collection, next)
-    refresh()
-  }
-
-  const removeEntity = (collection, id) => {
-    if (collection === 'ratings') {
-      saveCollection('marketplace-ratings', data.ratings.filter((item) => item.id !== id))
-    } else if (collection === 'reviews') {
-      saveCollection('reviews', data.reviews.filter((item) => item.id !== id))
-    } else if (collection === 'users') {
-      removeFavorites(deleteUser(id))
-    } else {
-      saveCollection(collection, data[collection].filter((item) => item.id !== id))
+  const refresh = async () => {
+    const nextData = loadData()
+    try {
+      [nextData.orders, nextData.users, nextData.products, nextData.categories, nextData.sellers, nextData.reviews, nextData.ratings] = await Promise.all([
+        fetchOrders(), fetchAdminUsers(), fetchProducts(), fetchCategories(), fetchSellers(), fetchAdminReviews(), fetchAdminRatings(),
+      ])
+    } catch (error) {
+      console.error('Unable to load administration data', error)
     }
-    refresh()
+    setData(nextData)
   }
 
-  const saveEdit = (event) => {
+  useEffect(() => {
+    refresh()
+  }, [])
+  const updateEntity = async (collection, id, changes) => {
+    if (collection === 'products') await updateMyProduct(id, changes)
+    if (collection === 'categories') await updateCategory(id, changes)
+    if (collection === 'sellers') await updateSeller(id, changes)
+    await refresh()
+  }
+
+  const removeEntity = async (collection, id) => {
+    if (collection === 'ratings') {
+      await deleteAdminRating(id)
+    } else if (collection === 'reviews') {
+      await deleteAdminReview(id)
+    } else if (collection === 'users') {
+      await deleteAdminUser(id)
+    } else if (collection === 'products') {
+      await deleteMyProduct(id)
+    } else if (collection === 'categories') {
+      await deleteCategory(id)
+    } else if (collection === 'sellers') {
+      await deleteSeller(id)
+    } else {
+      return
+    }
+    await refresh()
+  }
+
+  const saveEdit = async (event) => {
     event.preventDefault()
     const changes = { ...editor.values }
     if (editor.collection === 'products') {
@@ -72,29 +111,39 @@ export default function AdminPage() {
       changes.status = changes.stock > 0 ? 'in-stock' : 'out-of-stock'
     }
     if (editor.collection === 'orders') changes.total = Number(changes.total)
-    if (editor.collection === 'products' && !editor.id) {
-      createProduct({ ...changes, ownerId: 'u-admin', sellerId: 'u-admin' })
-      refresh()
-    } else {
-      updateEntity(editor.collection, editor.id, changes)
+    try {
+      if (editor.collection === 'products' && !editor.id) {
+        await createMyProduct(changes)
+      } else {
+        await updateEntity(editor.collection, editor.id, changes)
+      }
+      await refresh()
+      setEditor(null)
+    } catch (error) {
+      console.error('Unable to save administration changes', error)
     }
-    setEditor(null)
   }
 
-  const addCategory = (event) => {
+  const addCategory = async (event) => {
     event.preventDefault()
-    const category = { ...newCategory, id: `category-${Date.now()}` }
-    saveCollection('categories', [...data.categories, category])
-    setNewCategory({ name: '', slug: '', icon: '📦', description: '' })
-    refresh()
+    try {
+      await createCategory(newCategory)
+      setNewCategory({ name: '', slug: '', icon: '📦', description: '' })
+      await refresh()
+    } catch (error) {
+      console.error('Unable to create category', error)
+    }
   }
 
-  const addSeller = (event) => {
+  const addSeller = async (event) => {
     event.preventDefault()
-    const seller = { ...newSeller, id: `seller-${Date.now()}`, logo: newSeller.name.slice(0, 2).toUpperCase(), rating: 0, sales: 0 }
-    saveCollection('sellers', [...data.sellers, seller])
-    setNewSeller({ name: '', location: '', description: '' })
-    refresh()
+    try {
+      await createSeller(newSeller)
+      setNewSeller({ name: '', location: '', description: '' })
+      await refresh()
+    } catch (error) {
+      console.error('Unable to create seller', error)
+    }
   }
 
   const metrics = [
@@ -147,7 +196,7 @@ export default function AdminPage() {
     }
 
     if (section === 'Users') return table(['Name', 'Email', 'Role'], data.users.map((user) => (
-      <tr key={user.id}><td>{user.name}</td><td>{user.email}</td><td><span className={styles.role}>{user.role}</span></td><td>{actions('users', user, user.id !== 'u-admin', user.id !== 'u-admin')}</td></tr>
+      <tr key={user.id}><td>{user.name}</td><td>{user.email}</td><td><span className={styles.role}>{t(user.role)}</span></td><td>{actions('users', user, false, user.role !== 'Admin')}</td></tr>
     )))
 
     if (section === 'Sellers') return (
@@ -187,12 +236,12 @@ export default function AdminPage() {
       </>
     )
 
-    if (section === 'Orders') return table(['Order', 'Customer', 'Seller', 'Status', 'Total'], data.orders.map((order) => (
-      <tr key={order.id}><td>{order.id}</td><td>{order.customer}</td><td>{order.seller}</td><td>{t(order.status)}</td><td>{formatCurrency(order.total)}</td><td>{actions('orders', order)}</td></tr>
+    if (section === 'Orders') return table(['Order', 'Customer', 'Status', 'Total'], data.orders.map((order) => (
+      <tr key={order.id}><td>{order.id}</td><td>{order.customer}</td><td>{t(order.status)}</td><td>{formatCurrency(order.total)}</td><td>—</td></tr>
     )))
 
     const reviewRows = [
-      ...data.reviews.map((review) => <tr key={review.id}><td>{t('Product')}</td><td>{review.user}</td><td>{review.rating} / 5</td><td>{t(review.text)}</td><td>{actions('reviews', review, false)}</td></tr>),
+      ...data.reviews.map((review) => <tr key={review.id}><td>{review.productName}</td><td>{review.user}</td><td>{review.rating} / 5</td><td>{t(review.text)}</td><td>{actions('reviews', review, false)}</td></tr>),
       ...data.ratings.map((rating) => <tr key={rating.id}><td>{t('Marketplace')}</td><td>{rating.userName}</td><td>{rating.rating} / 5</td><td>{rating.text ? t(rating.text) : t('Rating only')}</td><td>{actions('ratings', rating, false)}</td></tr>),
     ]
     return table(['Type', 'Author', 'Rating', 'Review'], reviewRows)
@@ -209,7 +258,7 @@ export default function AdminPage() {
           {sections.map((name) => <button key={name} type="button" className={section === name ? styles.activeTab : ''} onClick={() => setSection(name)}>{t(name)}</button>)}
         </nav>
         <section className={styles.panel}>
-          <div className={styles.panelHeading}><h2>{t(section)}</h2><span>{section === 'Overview' ? t('Live local data') : `${t(section)} ${t('management')}`}</span></div>
+          <div className={styles.panelHeading}><h2>{t(section)}</h2><span>{section === 'Overview' ? t('Live database data') : `${t(section)} ${t('management')}`}</span></div>
           {renderSection()}
         </section>
       </div>

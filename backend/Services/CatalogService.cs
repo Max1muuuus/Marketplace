@@ -54,6 +54,7 @@ public class CatalogService : ICatalogService
         {
             Id = r.Id,
             ProductId = r.ProductId,
+            UserId = r.UserId,
             User = r.UserName,
             Rating = r.Rating,
             Date = r.Date.ToString("yyyy-MM-dd"),
@@ -69,8 +70,8 @@ public class CatalogService : ICatalogService
 
     public async Task<List<ProductDto>> GetNewestAsync()
     {
-        var products = await _productRepository.GetAllAsync();
-        return products.Take(6).Select(MapProduct).ToList();
+        var products = await _productRepository.GetNewestAsync();
+        return products.Select(MapProduct).ToList();
     }
 
     public async Task<List<ProductDto>> GetPopularAsync()
@@ -88,7 +89,7 @@ public class CatalogService : ICatalogService
         Slug = category.Slug
     };
 
-    private static ProductDto MapProduct(Product product)
+    internal static ProductDto MapProduct(Product product)
     {
         var gallery = TryParseStringArray(product.Gallery);
         var specs = TryParseDictionary(product.Specs);
@@ -106,6 +107,7 @@ public class CatalogService : ICatalogService
             Stock = product.Stock,
             Condition = product.Condition,
             SellerId = product.SellerId,
+            OwnerUserId = product.OwnerUserId,
             Image = product.Image,
             Gallery = gallery,
             Description = product.Description,

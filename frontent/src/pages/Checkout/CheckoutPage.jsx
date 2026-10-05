@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { useLanguage } from '../../context/useLanguage'
+import { createOrderRequest } from '../../services/mockApi'
 import styles from './CheckoutPage.module.scss'
 
 const initialForm = {
@@ -20,6 +21,8 @@ export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart()
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState({})
+  const [submitError, setSubmitError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const shipping = subtotal > 0 ? 299 : 0
   const total = subtotal + shipping
 
@@ -28,7 +31,7 @@ export default function CheckoutPage() {
     setErrors((current) => ({ ...current, [field]: '' }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const nextErrors = {}
 
@@ -43,8 +46,20 @@ export default function CheckoutPage() {
       return
     }
 
-    clearCart()
-    alert(t('Order placed successfully'))
+    setIsSubmitting(true)
+    setSubmitError('')
+    try {
+      await createOrderRequest({
+        ...form,
+        items: items.map((item) => ({ productId: Number(item.id), quantity: item.quantity })),
+      })
+      clearCart()
+      alert(t('Order placed successfully'))
+    } catch (error) {
+      setSubmitError(error.message || t('Unable to place order'))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -59,46 +74,46 @@ export default function CheckoutPage() {
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.grid}>
               <div>
-                <label>{t('First name')}</label>
-                <input value={form.firstName} onChange={(event) => updateField('firstName', event.target.value)} />
+                <label htmlFor="checkout-first-name">{t('First name')}</label>
+                <input id="checkout-first-name" autoComplete="given-name" value={form.firstName} onChange={(event) => updateField('firstName', event.target.value)} />
                 {errors.firstName ? <small>{t(errors.firstName)}</small> : null}
               </div>
               <div>
-                <label>{t('Last name')}</label>
-                <input value={form.lastName} onChange={(event) => updateField('lastName', event.target.value)} />
+                <label htmlFor="checkout-last-name">{t('Last name')}</label>
+                <input id="checkout-last-name" autoComplete="family-name" value={form.lastName} onChange={(event) => updateField('lastName', event.target.value)} />
                 {errors.lastName ? <small>{t(errors.lastName)}</small> : null}
               </div>
             </div>
 
             <div className={styles.grid}>
               <div>
-                <label>{t('Email')}</label>
-                <input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} />
+                <label htmlFor="checkout-email">{t('Email')}</label>
+                <input id="checkout-email" autoComplete="email" type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} />
                 {errors.email ? <small>{t(errors.email)}</small> : null}
               </div>
               <div>
-                <label>{t('Phone')}</label>
-                <input value={form.phone} onChange={(event) => updateField('phone', event.target.value)} />
+                <label htmlFor="checkout-phone">{t('Phone')}</label>
+                <input id="checkout-phone" autoComplete="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} />
                 {errors.phone ? <small>{t(errors.phone)}</small> : null}
               </div>
             </div>
 
             <div className={styles.grid}>
               <div>
-                <label>{t('City')}</label>
-                <input value={form.city} onChange={(event) => updateField('city', event.target.value)} />
+                <label htmlFor="checkout-city">{t('City')}</label>
+                <input id="checkout-city" autoComplete="address-level2" value={form.city} onChange={(event) => updateField('city', event.target.value)} />
                 {errors.city ? <small>{t(errors.city)}</small> : null}
               </div>
               <div>
-                <label>{t('Address')}</label>
-                <input value={form.address} onChange={(event) => updateField('address', event.target.value)} />
+                <label htmlFor="checkout-address">{t('Address')}</label>
+                <input id="checkout-address" autoComplete="street-address" value={form.address} onChange={(event) => updateField('address', event.target.value)} />
                 {errors.address ? <small>{t(errors.address)}</small> : null}
               </div>
             </div>
 
             <div className={styles.optionGroup}>
-              <label>{t('Delivery method')}</label>
-              <select value={form.delivery} onChange={(event) => updateField('delivery', event.target.value)}>
+              <label htmlFor="checkout-delivery">{t('Delivery method')}</label>
+              <select id="checkout-delivery" value={form.delivery} onChange={(event) => updateField('delivery', event.target.value)}>
                 <option value="courier">{t('Courier delivery')}</option>
                 <option value="pickup">{t('Pickup')}</option>
                 <option value="nova">Nova Poshta</option>
@@ -106,15 +121,16 @@ export default function CheckoutPage() {
             </div>
 
             <div className={styles.optionGroup}>
-              <label>{t('Payment method')}</label>
-              <select value={form.payment} onChange={(event) => updateField('payment', event.target.value)}>
+              <label htmlFor="checkout-payment">{t('Payment method')}</label>
+              <select id="checkout-payment" value={form.payment} onChange={(event) => updateField('payment', event.target.value)}>
                 <option value="card">{t('Card')}</option>
                 <option value="cash">{t('Cash on delivery')}</option>
                 <option value="wallet">{t('Digital wallet')}</option>
               </select>
             </div>
 
-            <button type="submit" className={styles.primaryButton}>{t('Place order')}</button>
+            {submitError ? <small role="alert">{submitError}</small> : null}
+            <button type="submit" className={styles.primaryButton} disabled={isSubmitting || !items.length}>{isSubmitting ? t('Loading') : t('Place order')}</button>
           </form>
 
           <aside className={styles.summary}>

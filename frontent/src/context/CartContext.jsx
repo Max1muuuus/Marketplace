@@ -1,52 +1,77 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useAuth } from './AuthContext'
+import { fetchAccountCart, saveAccountCart } from '../services/mockApi'
 
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => {
-    const saved = localStorage.getItem('marketplace-cart')
-    return saved ? JSON.parse(saved) : []
-  })
+  const { user } = useAuth()
+  const userId = user?.id
+  const ownerKey = userId ?? 'guest'
+  const [itemsByOwner, setItemsByOwner] = useState({ guest: [] })
+  const [loadedUserIds, setLoadedUserIds] = useState([])
+  const items = itemsByOwner[ownerKey] || []
 
   useEffect(() => {
-    localStorage.setItem('marketplace-cart', JSON.stringify(items))
-  }, [items])
+    if (userId == null) return
+    let cancelled = false
+    fetchAccountCart().then((savedItems) => {
+      if (!cancelled) {
+        const inStockItems = savedItems.map((item) => ({
+          ...item,
+          quantity: Math.min(item.quantity, item.stock),
+        })).filter((item) => item.quantity > 0)
+        setItemsByOwner((current) => ({ ...current, [userId]: inStockItems }))
+        setLoadedUserIds((current) => current.includes(userId) ? current : [...current, userId])
+      }
+    }).catch((error) => console.error('Unable to load account cart', error))
+    return () => { cancelled = true }
+  }, [userId])
+
+  useEffect(() => {
+    if (userId != null && loadedUserIds.includes(userId)) {
+      saveAccountCart(itemsByOwner[userId] || []).catch((error) => console.error('Unable to save account cart', error))
+    }
+  }, [itemsByOwner, loadedUserIds, userId])
 
   const addToCart = (product, quantity = 1) => {
-    setItems((current) => {
+    setItemsByOwner((currentByOwner) => {
+      const current = currentByOwner[ownerKey] || []
+      const stock = Number(product.stock) || 0
+      if (stock <= 0) return currentByOwner
       const existing = current.find((item) => item.id === product.id)
-      if (existing) {
-        return current.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item,
+      const next = existing
+        ? current.map((item) =>
+          item.id === product.id ? { ...item, quantity: Math.min(stock, item.quantity + quantity) } : item,
         )
-      }
-      return [...current, { ...product, quantity }]
+        : [...current, { ...product, quantity: Math.min(stock, quantity) }]
+      return { ...currentByOwner, [ownerKey]: next }
     })
   }
 
   const updateQuantity = (id, delta) => {
-    setItems((current) =>
-      current
+    setItemsByOwner((currentByOwner) => {
+      const current = currentByOwner[ownerKey] || []
+      const next = current
         .map((item) =>
-          item.id === id ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item,
+          item.id === id ? { ...item, quantity: Math.min(Number(item.stock) || 0, Math.max(0, item.quantity + delta)) } : item,
         )
-        .filter((item) => item.quantity > 0),
-    )
+        .filter((item) => item.quantity > 0)
+      return { ...currentByOwner, [ownerKey]: next }
+    })
   }
 
-  const removeFromCart = (id) => {
-    setItems((current) => current.filter((item) => item.id !== id))
-  }
+  const removeFromCart = (id) => setItemsByOwner((current) => ({
+    ...current,
+    [ownerKey]: (current[ownerKey] || []).filter((item) => item.id !== id),
+  }))
 
-  const clearCart = () => setItems([])
+  const clearCart = () => setItemsByOwner((current) => ({ ...current, [ownerKey]: [] }))
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
-  const value = useMemo(
-    () => ({ items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, itemCount }),
-    [items, subtotal, itemCount],
-  )
+  const value = { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, itemCount }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

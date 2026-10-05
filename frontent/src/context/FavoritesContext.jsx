@@ -1,33 +1,53 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useAuth } from './AuthContext'
+import { fetchAccountFavorites, saveAccountFavorites } from '../services/mockApi'
 
 const FavoritesContext = createContext(null)
 
 export function FavoritesProvider({ children }) {
-  const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem('marketplace-favorites')
-    return saved ? JSON.parse(saved) : []
-  })
+  const { user } = useAuth()
+  const userId = user?.id
+  const ownerKey = userId ?? 'guest'
+  const [favoritesByOwner, setFavoritesByOwner] = useState({ guest: [] })
+  const [loadedUserIds, setLoadedUserIds] = useState([])
+  const favorites = favoritesByOwner[ownerKey] || []
 
   useEffect(() => {
-    localStorage.setItem('marketplace-favorites', JSON.stringify(favorites))
-  }, [favorites])
+    if (userId == null) return
+    let cancelled = false
+    fetchAccountFavorites().then((savedFavorites) => {
+      if (!cancelled) {
+        setFavoritesByOwner((current) => ({ ...current, [userId]: savedFavorites }))
+        setLoadedUserIds((current) => current.includes(userId) ? current : [...current, userId])
+      }
+    }).catch((error) => console.error('Unable to load account favorites', error))
+    return () => { cancelled = true }
+  }, [userId])
+
+  useEffect(() => {
+    if (userId != null && loadedUserIds.includes(userId)) {
+      saveAccountFavorites(favoritesByOwner[userId] || []).catch((error) => console.error('Unable to save account favorites', error))
+    }
+  }, [favoritesByOwner, loadedUserIds, userId])
 
   const toggleFavorite = (id) => {
-    setFavorites((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-    )
+    setFavoritesByOwner((currentByOwner) => {
+      const current = currentByOwner[ownerKey] || []
+      const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+      return { ...currentByOwner, [ownerKey]: next }
+    })
   }
 
   const removeFavorites = (ids) => {
-    setFavorites((current) => current.filter((id) => !ids.includes(id)))
+    setFavoritesByOwner((current) => ({
+      ...current,
+      [ownerKey]: (current[ownerKey] || []).filter((id) => !ids.includes(id)),
+    }))
   }
 
   const isFavorite = (id) => favorites.includes(id)
 
-  const value = useMemo(
-    () => ({ favorites, toggleFavorite, removeFavorites, isFavorite }),
-    [favorites],
-  )
+  const value = { favorites, toggleFavorite, removeFavorites, isFavorite }
 
   return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>
 }

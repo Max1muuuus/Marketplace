@@ -13,6 +13,7 @@ public interface IOrderService
 
 public class OrderService : IOrderService
 {
+    private const decimal ShippingFee = 299m;
     private readonly AppDbContext _context;
 
     public OrderService(AppDbContext context)
@@ -38,6 +39,15 @@ public class OrderService : IOrderService
         if (request.Items == null || !request.Items.Any())
             return null;
 
+        var requestedItems = request.Items
+            .GroupBy(item => item.ProductId)
+            .Select(group => new CreateOrderItemRequest { ProductId = group.Key, Quantity = group.Sum(item => item.Quantity) })
+            .ToList();
+        if (requestedItems.Any(item => item.ProductId <= 0 || item.Quantity <= 0))
+            return null;
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
         var order = new Order
         {
             UserId = userId,
@@ -52,11 +62,11 @@ public class OrderService : IOrderService
             Status = "Pending"
         };
 
-        foreach (var item in request.Items)
+        foreach (var item in requestedItems)
         {
             var product = await _context.Products.FindAsync(item.ProductId);
-            if (product == null || item.Quantity <= 0)
-                continue;
+            if (product == null || product.Stock < item.Quantity)
+                return null;
 
             order.Items.Add(new OrderItem
             {
@@ -68,13 +78,18 @@ public class OrderService : IOrderService
             });
 
             order.TotalAmount += product.Price * item.Quantity;
+            product.Stock -= item.Quantity;
+            if (product.Stock == 0)
+                product.Status = "out-of-stock";
         }
 
         if (!order.Items.Any())
             return null;
 
+        order.TotalAmount += ShippingFee;
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         return MapOrder(order);
     }
@@ -84,6 +99,7 @@ public class OrderService : IOrderService
         return new OrderDto
         {
             Id = order.Id,
+            CreatedAt = order.CreatedAt,
             CustomerName = order.CustomerName,
             Email = order.Email,
             Phone = order.Phone,

@@ -1,17 +1,34 @@
-const API_BASE = 'http://localhost:5079/api'
+const API_BASE = '/api'
 
 async function request(path, options = {}) {
+  const token = localStorage.getItem('marketplace-token')
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,
   })
 
   if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(errorText || 'Request failed')
+    const responseText = await response.text()
+    const details = (() => {
+      try {
+        return JSON.parse(responseText)
+      } catch {
+        return null
+      }
+    })()
+    if (response.status === 401) {
+      localStorage.removeItem('marketplace-token')
+      localStorage.removeItem('marketplace-user')
+      window.dispatchEvent(new Event('marketplace:unauthorized'))
+    }
+    const message = details?.message || details?.title || `${response.status} ${response.statusText}`
+    const error = new Error(message)
+    error.status = response.status
+    throw error
   }
 
   if (response.status === 204) {

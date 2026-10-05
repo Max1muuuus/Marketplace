@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.RegularExpressions;
 using backend.Data;
 using backend.DTOs;
 using backend.Entities;
@@ -36,13 +37,15 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.LastName))
+        if (string.IsNullOrWhiteSpace(request.FirstName))
             return null;
 
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             return null;
 
-        var email = request.Email.Trim();
+        var email = request.Email.Trim().ToLowerInvariant();
+        if (!Regex.IsMatch(email, @"^[^\s@]+@[^\s@]+\.[^\s@]+$"))
+            return null;
         if (await _userRepository.GetByEmailAsync(email) != null)
             return null;
 
@@ -51,7 +54,7 @@ public class AuthService : IAuthService
         {
             Email = email,
             FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
+            LastName = request.LastName?.Trim() ?? string.Empty,
             Role = "Customer",
             PasswordHash = string.Empty
         };

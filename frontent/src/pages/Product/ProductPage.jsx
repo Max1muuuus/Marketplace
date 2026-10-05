@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
-import { fetchProductById, fetchReviews, fetchSellerById } from '../../services/mockApi'
+import { createReviewRequest, fetchProductById, fetchProducts, fetchReviews, fetchSellerById } from '../../services/mockApi'
 import { useCart } from '../../context/CartContext'
 import { useFavorites } from '../../context/FavoritesContext'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/useLanguage'
 import styles from './ProductPage.module.scss'
-import { getProducts, saveProductReview } from '../../services/marketplaceStore'
 
 export default function ProductPage() {
   const { id } = useParams()
@@ -18,6 +17,7 @@ export default function ProductPage() {
   const [product, setProduct] = useState(null)
   const [seller, setSeller] = useState(null)
   const [reviews, setReviews] = useState([])
+  const [related, setRelated] = useState([])
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [reviewRating, setReviewRating] = useState('5')
@@ -34,6 +34,8 @@ export default function ProductPage() {
         setSeller(currentSeller)
         const productReviews = await fetchReviews(currentProduct.id)
         setReviews(productReviews)
+        const allProducts = await fetchProducts()
+        setRelated(allProducts.filter((entry) => entry.category === currentProduct.category && entry.id !== currentProduct.id).slice(0, 4))
         const ownReview = productReviews.find((review) => review.userId === user?.id)
         if (ownReview) {
           setReviewRating(String(ownReview.rating))
@@ -49,9 +51,7 @@ export default function ProductPage() {
     event.preventDefault()
     if (!user || !product) return
 
-    saveProductReview(product.id, {
-      userId: user.id,
-      user: user.name,
+    await createReviewRequest(product.id, {
       rating: Number(reviewRating),
       text: reviewText.trim(),
     })
@@ -70,8 +70,6 @@ export default function ProductPage() {
   }
 
   const ratingAverage = Number(product.rating || 0).toFixed(1)
-
-  const related = getProducts().filter((entry) => entry.category === product.category && entry.id !== product.id).slice(0, 4)
 
   return (
     <div className={styles.page}>
@@ -111,13 +109,13 @@ export default function ProductPage() {
             <p className={styles.description}>{t(product.description)}</p>
 
             <div className={styles.quantityRow}>
-              <button type="button" onClick={() => setQuantity((current) => Math.max(1, current - 1))}>-</button>
+              <button type="button" aria-label={t('Decrease quantity')} onClick={() => setQuantity((current) => Math.max(1, current - 1))}>-</button>
               <span>{quantity}</span>
-              <button type="button" onClick={() => setQuantity((current) => current + 1)}>+</button>
+              <button type="button" aria-label={t('Increase quantity')} disabled={quantity >= product.stock} onClick={() => setQuantity((current) => Math.min(product.stock, current + 1))}>+</button>
             </div>
 
             <div className={styles.actionRow}>
-              <button type="button" className={styles.primaryButton} onClick={() => addToCart(product, quantity)}>{t('Add to cart')}</button>
+              <button type="button" className={styles.primaryButton} disabled={product.stock <= 0} onClick={() => addToCart(product, quantity)}>{t(product.stock > 0 ? 'Add to cart' : 'Out of stock')}</button>
               <button type="button" className={styles.secondaryButton} onClick={() => toggleFavorite(product.id)}>
                 {t(isFavorite(product.id) ? 'Saved' : 'Save')}
               </button>

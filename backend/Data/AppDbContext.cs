@@ -16,6 +16,9 @@ public class AppDbContext : DbContext
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<Favorite> Favorites => Set<Favorite>();
+    public DbSet<MarketplaceRating> MarketplaceRatings => Set<MarketplaceRating>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -67,6 +70,11 @@ public class AppDbContext : DbContext
                 .WithMany(x => x.Products)
                 .HasForeignKey(x => x.SellerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.OwnerUser)
+                .WithMany(x => x.Products)
+                .HasForeignKey(x => x.OwnerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Review>(entity =>
@@ -79,7 +87,7 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.User)
                 .WithMany(x => x.Reviews)
                 .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<Order>(entity =>
@@ -114,7 +122,28 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.Product)
                 .WithMany()
                 .HasForeignKey(x => x.ProductId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(x => new { x.UserId, x.ProductId });
+            entity.HasOne(x => x.User).WithMany(x => x.CartItems).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Favorite>(entity =>
+        {
+            entity.HasKey(x => new { x.UserId, x.ProductId });
+            entity.HasOne(x => x.User).WithMany(x => x.Favorites).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<MarketplaceRating>(entity =>
+        {
+            entity.HasIndex(x => x.UserId).IsUnique();
+            entity.Property(x => x.Text).HasMaxLength(500);
+            entity.HasOne(x => x.User).WithMany(x => x.MarketplaceRatings).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

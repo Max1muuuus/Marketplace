@@ -1,7 +1,9 @@
 using backend.DTOs;
+using backend.Data;
 using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers;
 
@@ -10,10 +12,12 @@ namespace backend.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly AppDbContext _context;
 
-    public OrdersController(IOrderService orderService)
+    public OrdersController(IOrderService orderService, AppDbContext context)
     {
         _orderService = orderService;
+        _context = context;
     }
 
     [HttpGet]
@@ -23,7 +27,7 @@ public class OrdersController : ControllerBase
         var userIdClaim = User.FindFirst("sub") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
         int? userId = null;
 
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
+        if (!User.IsInRole("Admin") && userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
         {
             userId = parsedUserId;
         }
@@ -32,20 +36,21 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderRequest request)
     {
         var userIdClaim = User.FindFirst("sub") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
         int? userId = null;
 
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId)
+            && await _context.Users.AnyAsync(user => user.Id == parsedUserId))
         {
             userId = parsedUserId;
         }
 
         var result = await _orderService.CreateOrderAsync(userId, request);
         if (result == null)
-            return BadRequest(new { message = "Order cannot be created without valid products." });
+            return BadRequest(new { message = "Your cart contains unavailable products or quantities above current stock. Refresh your cart and try again." });
 
         return Ok(result);
     }

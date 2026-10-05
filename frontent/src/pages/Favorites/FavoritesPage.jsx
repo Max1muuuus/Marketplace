@@ -1,14 +1,21 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
 import { useFavorites } from '../../context/FavoritesContext'
 import { useLanguage } from '../../context/useLanguage'
-import { getProducts } from '../../services/marketplaceStore'
+import { fetchProducts } from '../../services/mockApi'
 import styles from './FavoritesPage.module.scss'
 
 export default function FavoritesPage() {
   const { t } = useLanguage()
   const { favorites } = useFavorites()
-  const items = getProducts().filter((product) => favorites.includes(product.id))
+  const [products, setProducts] = useState([])
+
+  useEffect(() => {
+    fetchProducts().then(setProducts).catch((error) => console.error('Unable to load products', error))
+  }, [])
+
+  const items = products.filter((product) => favorites.includes(product.id))
 
   return (
     <div className={styles.page}>

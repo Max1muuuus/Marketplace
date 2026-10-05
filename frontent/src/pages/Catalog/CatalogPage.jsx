@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
 import SearchBar from '../../components/Search/SearchBar'
-import { getCategories, getProducts } from '../../services/marketplaceStore'
+import { fetchCategories, fetchProducts } from '../../services/mockApi'
 import { useLanguage } from '../../context/useLanguage'
 import styles from './CatalogPage.module.scss'
 
@@ -12,8 +12,8 @@ export default function CatalogPage() {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('featured')
   const [view, setView] = useState('grid')
-  const [products] = useState(getProducts)
-  const [categories] = useState(getCategories)
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [filters, setFilters] = useState({
     brand: '',
     rating: '',
@@ -23,6 +23,13 @@ export default function CatalogPage() {
   })
 
   const selectedCategory = searchParams.get('category') || ''
+
+  useEffect(() => {
+    Promise.all([fetchProducts(), fetchCategories()]).then(([nextProducts, nextCategories]) => {
+      setProducts(nextProducts)
+      setCategories(nextCategories)
+    }).catch((error) => console.error('Unable to load catalog', error))
+  }, [])
 
   const visibleProducts = useMemo(() => {
     let nextProducts = [...products]

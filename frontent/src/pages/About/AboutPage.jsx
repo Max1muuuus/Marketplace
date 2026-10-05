@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/useLanguage'
-import { getMarketplaceRatings, saveMarketplaceRating } from '../../services/marketplaceStore'
+import { fetchAccountRating, fetchMarketplaceRatings, saveAccountRating } from '../../services/mockApi'
 import styles from './AboutPage.module.scss'
 
 const values = [
@@ -22,25 +22,36 @@ const values = [
 
 export default function AboutPage() {
   const { user } = useAuth()
+  const userId = user?.id
   const { t } = useLanguage()
-  const [ratings, setRatings] = useState(getMarketplaceRatings)
-  const [rating, setRating] = useState(() => ratings.find((entry) => entry.userId === user?.id)?.rating || '5')
-  const [text, setText] = useState(() => ratings.find((entry) => entry.userId === user?.id)?.text || '')
+  const [ratings, setRatings] = useState([])
+  const [rating, setRating] = useState('5')
+  const [text, setText] = useState('')
   const [saved, setSaved] = useState(false)
   const average = ratings.length ? (ratings.reduce((sum, entry) => sum + Number(entry.rating), 0) / ratings.length).toFixed(1) : '—'
 
-  const submitRating = (event) => {
+  useEffect(() => {
+    fetchMarketplaceRatings().then(setRatings).catch((error) => console.error('Unable to load marketplace ratings', error))
+    if (userId != null) {
+      fetchAccountRating().then((entry) => {
+        setRating(String(entry.rating))
+        setText(entry.text)
+      }).catch((error) => {
+        if (error.status !== 404) console.error('Unable to load your marketplace rating', error)
+      })
+    }
+  }, [userId])
+
+  const submitRating = async (event) => {
     event.preventDefault()
     if (!user) return
-    const nextRatings = saveMarketplaceRating({
-      userId: user.id,
-      userName: user.name,
-      rating: Number(rating),
-      text: text.trim(),
-      date: new Date().toISOString().slice(0, 10),
-    })
-    setRatings(nextRatings)
-    setSaved(true)
+    try {
+      await saveAccountRating({ rating: Number(rating), text: text.trim() })
+      setRatings(await fetchMarketplaceRatings())
+      setSaved(true)
+    } catch (error) {
+      console.error('Unable to save marketplace rating', error)
+    }
   }
 
   return (
