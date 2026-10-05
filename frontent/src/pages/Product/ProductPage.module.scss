@@ -253,6 +253,8 @@
   gap: 16px;
 }
 
+<<<<<<< HEAD
+=======
 .reviewForm {
   display: grid;
   grid-template-columns: minmax(130px, 180px) minmax(0, 1fr) auto;
@@ -316,6 +318,7 @@
   color: #c4b5fd;
 }
 
+>>>>>>> origin/main
 .reviewCard {
   padding: 20px 18px;
   border-radius: 20px;
@@ -378,8 +381,11 @@
     flex-direction: row;
     overflow-x: auto;
   }
+<<<<<<< HEAD
+=======
 
   .reviewForm {
     grid-template-columns: 1fr;
   }
+>>>>>>> origin/main
 }

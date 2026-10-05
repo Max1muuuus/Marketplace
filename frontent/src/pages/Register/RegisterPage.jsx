@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const { t } = useLanguage()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -26,11 +27,18 @@ export default function RegisterPage() {
     }
 
     try {
+      setLoading(true)
+      setErrors({})
+
+      // Викликаємо реєстрацію (надсилає RegisterDto: name, email, password)
       await register({
-        email: form.email,
+        name: form.name.trim(),
+        email: form.email.trim(),
         password: form.password,
         name: form.name,
       })
+
+      // Після успішної реєстрації перенаправляємо на головну
       navigate('/')
     } catch (error) {
       setErrors({ form: error.message || 'Registration failed. Please try again.' })
@@ -40,8 +48,11 @@ export default function RegisterPage() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <span className={styles.eyebrow}>{t('Create account')}</span>
+        <span className={styles.eyebrow}>Create account</span>
         <h1>{t('Register')}</h1>
+
+        {errors.server && <div className={styles.serverError}>{errors.server}</div>}
+
         <form onSubmit={handleSubmit}>
           {errors.form ? <p role="alert">{t(errors.form)}</p> : null}
           <div className={styles.field}>
@@ -49,18 +60,24 @@ export default function RegisterPage() {
             <input id="register-name" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
             {errors.name ? <small>{t(errors.name)}</small> : null}
           </div>
+
           <div className={styles.field}>
             <label htmlFor="register-email">{t('Email')}</label>
             <input id="register-email" autoComplete="email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
             {errors.email ? <small>{t(errors.email)}</small> : null}
           </div>
+
           <div className={styles.field}>
             <label htmlFor="register-password">{t('Password')}</label>
             <input id="register-password" autoComplete="new-password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
             {errors.password ? <small>{t(errors.password)}</small> : null}
           </div>
-          <button type="submit" className={styles.primaryButton}>{t('Register')}</button>
+
+          <button type="submit" className={styles.primaryButton} disabled={loading}>
+                      {loading ? 'Registering...' : {t('Register')}}
+          </button>
         </form>
+
         <p>
           {t('Already have an account?')} <Link to="/login">{t('Login')}</Link>
         </p>

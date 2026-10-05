@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import { loginRequest, registerRequest } from '../services/mockApi'
 
 const AuthContext = createContext(null)
@@ -34,7 +34,10 @@ function readSavedToken() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(readSavedUser)
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('marketplace-user')
+    return saved ? JSON.parse(saved) : null
+  })
 
   const [token, setToken] = useState(readSavedToken)
 
@@ -46,11 +49,42 @@ export function AuthProvider({ children }) {
     }
   }, [user])
 
-  useEffect(() => {
-    if (token) {
-      localStorage.setItem('marketplace-token', token)
-    } else {
+  const parseName = (name = '') => {
+    const parts = name.trim().split(' ')
+    return {
+      firstName: parts[0] || 'User',
+      lastName: parts.slice(1).join(' ') || 'Customer',
+    }
+  }
+
+  const mapUser = (backendUser) => ({
+    id: backendUser.id,
+    name: `${backendUser.firstName || ''} ${backendUser.lastName || ''}`.trim() || backendUser.email,
+    firstName: backendUser.firstName,
+    lastName: backendUser.lastName,
+    email: backendUser.email,
+    role: backendUser.role,
+  })
+
+  const logout = useCallback(() => {
       localStorage.removeItem('marketplace-token')
+    localStorage.removeItem('marketplace-user')
+    setUser(null)
+    setToken('')
+  }, [])
+
+  const login = useCallback(
+    async (payload) => {
+      try {
+        const response = await loginRequest({
+          email: payload.email,
+          password: payload.password,
+        })
+
+        const nextUser = mapUser(response.user)
+
+        if (response.token) {
+          localStorage.setItem('marketplace-token', response.token)
     }
   }, [token])
 
@@ -75,14 +109,26 @@ export function AuthProvider({ children }) {
     setToken(response.token)
     setUser(nextUser)
     return nextUser
+      } catch (error) {
+        logout()
+        throw error
   }
+    },
+    [logout]
+  )
 
-  const register = async (payload) => {
+  const register = useCallback(
+    async (payload) => {
+      const { firstName, lastName } = parseName(
+        payload.name || `${payload.firstName || ''} ${payload.lastName || ''}`
+      )
+
+      try {
     const response = await registerRequest({
-      firstName: payload.firstName || payload.name?.split(' ')[0] || 'New',
-      lastName: payload.lastName || payload.name?.split(' ').slice(1).join(' ') || '',
+          firstName: payload.firstName || firstName,
+          lastName: payload.lastName || lastName,
       email: payload.email,
-      password: payload.password || 'demo123',
+          password: payload.password,
     })
     const nextUser = {
       id: response.user.id,
@@ -94,20 +140,17 @@ export function AuthProvider({ children }) {
     setToken(response.token)
     setUser(nextUser)
     return nextUser
+      } catch (error) {
+        logout()
+        throw error
   }
-
-  const logout = () => {
-    setUser(null)
-    setToken('')
-  }
-
-  const updateUser = (changes) => {
-    setUser((current) => current ? { ...current, ...changes } : current)
-  }
+    },
+    [logout]
+  )
 
   const value = useMemo(
-    () => ({ user, token, login, register, logout, updateUser }),
-    [user, token],
+    () => ({ user, token, login, register, logout }),
+    [user, token, login, register, logout]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

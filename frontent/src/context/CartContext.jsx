@@ -48,6 +48,7 @@ export function CartProvider({ children }) {
       return { ...currentByOwner, [ownerKey]: next }
     })
   }
+  }, [])
 
   const updateQuantity = (id, delta) => {
     setItemsByOwner((currentByOwner) => {
@@ -60,6 +61,13 @@ export function CartProvider({ children }) {
       return { ...currentByOwner, [ownerKey]: next }
     })
   }
+}, [])
+
+  const getCheckoutPayload = useCallback(() => {
+    return items.map((item) => {
+      // Гарантуємо, що productId є саме примітивом (string/number), а не об'єктом
+      const rawId = item.productId ?? item.id ?? item.product?.id
+      const cleanProductId = typeof rawId === 'object' ? (rawId.id || rawId._id) : rawId
 
   const removeFromCart = (id) => setItemsByOwner((current) => ({
     ...current,
@@ -68,8 +76,10 @@ export function CartProvider({ children }) {
 
   const clearCart = () => setItemsByOwner((current) => ({ ...current, [ownerKey]: [] }))
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
+  const itemCount = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  )
 
   const value = { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, itemCount }
 

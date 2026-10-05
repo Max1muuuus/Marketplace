@@ -32,10 +32,7 @@ public class AuthService : IAuthService
         _context = context;
     }
 
-    public async Task<User?> GetUserByEmailAsync(string email)
-        => await _userRepository.GetByEmailAsync(email);
-
-    public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)
+    public async Task<AuthDto?> RegisterAsync(RegisterDto request)
     {
         if (string.IsNullOrWhiteSpace(request.FirstName))
             return null;
@@ -49,8 +46,7 @@ public class AuthService : IAuthService
         if (await _userRepository.GetByEmailAsync(email) != null)
             return null;
 
-        var passwordHasher = new PasswordHasher<User>();
-        var user = new User
+        var user = new UserEntity
         {
             Email = email,
             FirstName = request.FirstName.Trim(),
@@ -59,31 +55,54 @@ public class AuthService : IAuthService
             PasswordHash = string.Empty
         };
 
+        var passwordHasher = new PasswordHasher<UserEntity>();
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
+
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
 
         return CreateAuthResponse(user);
     }
 
-    public async Task<AuthResponse?> LoginAsync(LoginRequest request)
+    public async Task<UserDto?> GetUserAsync(string email)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email.Trim());
-        if (user == null)
+        var ue = await _userRepository.GetUserAsync(email);
+        if (ue == null) return null;
+
+        return new UserDto()
+        {
+            Email = ue.Email,
+            FirstName = ue.FirstName,
+            LastName = ue.LastName,
+            Role = ue.Role
+        };
+    }
+
+
+
+    public async Task<AuthDto?> LoginAsync(LoginDto request)
+    {
+        var email = request.Email.Trim();
+        UserEntity user = await _userRepository.GetUserAsync(email);
+        if (user == null) return null;
+        if (!await _userRepository.IsUserExistsAsync(email))
             return null;
 
-        var passwordHasher = new PasswordHasher<User>();
+
+
+        var passwordHasher = new PasswordHasher<UserEntity>();
         var verification = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+
         if (verification == PasswordVerificationResult.Failed)
             return null;
 
         return CreateAuthResponse(user);
     }
 
-    private AuthResponse CreateAuthResponse(User user)
+    private AuthDto CreateAuthResponse(UserEntity user)
     {
         var token = GenerateJwtToken(user);
-        return new AuthResponse
+        return new AuthDto
         {
             Token = token,
             User = new UserDto
@@ -97,7 +116,7 @@ public class AuthService : IAuthService
         };
     }
 
-    private string GenerateJwtToken(User user)
+    private string GenerateJwtToken(UserEntity user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "marketplace-secret-key-should-be-changed"));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

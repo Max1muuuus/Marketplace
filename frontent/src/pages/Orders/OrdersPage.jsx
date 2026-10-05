@@ -55,8 +55,8 @@ export default function OrdersPage() {
             <article key={order.id} className={styles.card}>
               <div className={styles.headerRow}>
                 <div>
-                  <p className={styles.label}>{t('Order #')}{order.id}</p>
-                  <strong>{order.date}</strong>
+                    <p className={styles.label}>{t('Order #')} {order.id}</p>
+                    <strong>{orderDate}</strong>
                 </div>
                 <span className={styles.status}>{t(order.status)}</span>
               </div>
