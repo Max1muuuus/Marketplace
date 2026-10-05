@@ -13,11 +13,6 @@ const navItems = [
   { to: '/contacts', label: 'Contacts' },
 ]
 
-const labels = {
-  en: { search: 'Search', dark: 'Dark', light: 'Light', favorites: 'Favorites', cart: 'Cart', logout: 'Logout', login: 'Login', register: 'Register' },
-  uk: { search: 'Пошук', dark: 'Темна', light: 'Світла', favorites: 'Обране', cart: 'Кошик', logout: 'Вийти', login: 'Увійти', register: 'Реєстрація' },
-}
-
 export default function Header({ language, setLanguage, theme, setTheme }) {
   const { itemCount } = useCart()
   const { user, logout } = useAuth()

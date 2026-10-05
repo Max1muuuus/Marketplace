@@ -20,11 +20,12 @@ public class OrdersController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("getorders")]
+    [HttpGet]
     [Authorize]
     public async Task<ActionResult<List<OrderDto>>> GetOrders()
     {
-        int? userId = ClaimsPrincipalExtensions.GetUserId(User);
+        var userIdClaim = User.FindFirst("sub") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        int? userId = null;
 
         if (!User.IsInRole("Admin") && userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
         {
@@ -44,7 +45,8 @@ public class OrdersController : ControllerBase
         if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId)
             && await _context.Users.AnyAsync(user => user.Id == parsedUserId))
         {
-        int? userId = ClaimsPrincipalExtensions.GetUserId(User);
+            userId = parsedUserId;
+        }
 
         var result = await _orderService.CreateOrderAsync(userId, request);
         if (result == null)

@@ -20,46 +20,17 @@ export default function ProductPage() {
   const [related, setRelated] = useState([])
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
-  const [loading, setLoading] = useState(true)
+  const [reviewRating, setReviewRating] = useState('5')
+  const [reviewText, setReviewText] = useState('')
+  const [reviewSaved, setReviewSaved] = useState(false)
 
   useEffect(() => {
-    let active = true
-
     const load = async () => {
-      setLoading(true)
-      setSelectedImage(0)
-      setQuantity(1)
-
-      try {
       const currentProduct = await fetchProductById(id)
-
-        if (!active) return
-
       setProduct(currentProduct)
 
       if (currentProduct) {
-          // Переконуємося, що беремо саме ID продавця (з урахуванням регістру C# / JS)
-          const rawSellerId = currentProduct.sellerId ?? currentProduct.SellerId
-
-          // Якщо sellerId виявився об'єктом, беремо його id, інакше саме значення
-          const sellerId = typeof rawSellerId === 'object' 
-            ? (rawSellerId?.id ?? rawSellerId?.Id) 
-            : rawSellerId
-
-          const sellerPromise = (currentProduct.seller || currentProduct.Seller)
-            ? Promise.resolve(currentProduct.seller || currentProduct.Seller)
-            : sellerId ? fetchSellerById(sellerId) : Promise.resolve(null)
-
-          const categoryId = currentProduct.category ?? currentProduct.categoryId ?? currentProduct.CategoryId
-          const productId = currentProduct.id ?? currentProduct.Id
-
-          const [currentSeller, productReviews, categoryProducts] = await Promise.all([
-            sellerPromise,
-            fetchReviews(productId),
-            fetchProducts({ category: categoryId }),
-          ])
-
-          if (active) {
+        const currentSeller = await fetchSellerById(currentProduct.sellerId)
         setSeller(currentSeller)
         const productReviews = await fetchReviews(currentProduct.id)
         setReviews(productReviews)
@@ -70,13 +41,6 @@ export default function ProductPage() {
           setReviewRating(String(ownReview.rating))
           setReviewText(ownReview.text)
         }
-      }
-      } catch (error) {
-        console.error('Error loading product details:', error)
-      } finally {
-        if (active) {
-          setLoading(false)
-    }
       }
     }
 
@@ -105,24 +69,7 @@ export default function ProductPage() {
     return <div className={styles.empty}>{t('Product not found.')}</div>
   }
 
-  // Обробка полів товару для обидвох регістрів
-  const productName = product.name || product.Name
-  const productPrice = product.price ?? product.Price
-  const productOldPrice = product.oldPrice ?? product.OldPrice
-  const productRating = product.rating ?? product.Rating
-  const productBrand = product.brand || product.Brand
-  const productDescription = product.description || product.Description
-  const productStock = product.stock ?? product.Stock ?? 1
-
-  const gallery = product.gallery && product.gallery.length 
-    ? product.gallery 
-    : [product.image || product.Image || '']
-    
-  const specs = product.specs || product.Specs || {}
-
-  const ratingAverage = reviews.length
-    ? (reviews.reduce((sum, review) => sum + (review.rating ?? review.Rating ?? 0), 0) / reviews.length).toFixed(1)
-    : productRating
+  const ratingAverage = Number(product.rating || 0).toFixed(1)
 
   return (
     <div className={styles.page}>
@@ -130,41 +77,36 @@ export default function ProductPage() {
         <div className={styles.gallerySection}>
           <div className={styles.gallery}>
             <div className={styles.thumbs}>
-              {gallery.map((image, index) => (
-                <button
-                  key={`${image}-${index}`}
-                  type="button"
-                  className={selectedImage === index ? styles.thumbActive : ''}
-                  onClick={() => setSelectedImage(index)}
-                >
-                  <img src={image} alt={productName} />
+              {product.gallery.map((image, index) => (
+                <button key={image} type="button" className={selectedImage === index ? styles.thumbActive : ''} onClick={() => setSelectedImage(index)}>
+                  <img src={image} alt={product.name} />
                 </button>
               ))}
             </div>
             <div className={styles.mainImage}>
-              <img src={gallery[selectedImage] || gallery[0]} alt={productName} />
+              <img src={product.gallery[selectedImage]} alt={product.name} />
             </div>
           </div>
 
           <div className={styles.productInfo}>
             <div className={styles.badgeRow}>
-              {product.tag && <span className={styles.badge}>{product.tag}</span>}
-              <span className={styles.stock}>{productStock > 0 ? 'In stock' : 'Out of stock'}</span>
+              <span className={styles.badge}>{t(product.tag)}</span>
+              <span className={styles.stock}>{t(product.stock > 0 ? 'In stock' : 'Out of stock')}</span>
             </div>
 
-            <h1>{productName}</h1>
+            <h1>{product.name}</h1>
             <div className={styles.metaRow}>
-              <span className={styles.rating}>★ {productRating}</span>
-              <span>{product.reviewCount || product.ReviewCount || reviews.length} reviews</span>
-              {productBrand && <span>Brand: {productBrand}</span>}
+              <span className={styles.rating}>★ {product.rating}</span>
+              <span>{product.reviewCount} {t('reviews')}</span>
+              <span>{t('Brand:')} {product.brand}</span>
             </div>
 
             <div className={styles.priceRow}>
-              <strong>{formatCurrency(productPrice)}</strong>
-              {productOldPrice ? <span>{formatCurrency(productOldPrice)}</span> : null}
+              <strong>{formatCurrency(product.price)}</strong>
+              {product.oldPrice ? <span>{formatCurrency(product.oldPrice)}</span> : null}
             </div>
 
-            <p className={styles.description}>{productDescription}</p>
+            <p className={styles.description}>{t(product.description)}</p>
 
             <div className={styles.quantityRow}>
               <button type="button" aria-label={t('Decrease quantity')} onClick={() => setQuantity((current) => Math.max(1, current - 1))}>-</button>
@@ -181,29 +123,27 @@ export default function ProductPage() {
 
             <div className={styles.sellerCard}>
               <div>
-                <strong>{sellerName}</strong>
-                <p>{sellerLocation}</p>
+                <strong>{seller?.name || t('Marketplace seller')}</strong>
+                <p>{t(seller?.location || 'Ukraine')}</p>
               </div>
-              <span>★ {sellerRating}</span>
+              <span>★ {seller?.rating || 4.8}</span>
             </div>
           </div>
         </div>
 
-        {Object.keys(specs).length > 0 && (
         <section className={styles.specsSection}>
           <div className={styles.sectionHeader}>
             <h2>{t('Specifications')}</h2>
           </div>
           <div className={styles.specGrid}>
-              {Object.entries(specs).map(([key, value]) => (
+            {Object.entries(product.specs).map(([key, value]) => (
               <div key={key} className={styles.specItem}>
-                  <span>{key}</span>
-                  <strong>{value}</strong>
+                <span>{t(key)}</span>
+                <strong>{t(value)}</strong>
               </div>
             ))}
           </div>
         </section>
-        )}
 
         <section className={styles.reviewsSection}>
           <div className={styles.sectionHeader}>
@@ -233,20 +173,19 @@ export default function ProductPage() {
           )}
 
           <div className={styles.reviewList}>
-            {reviews.map((review) => (
-              <article key={review.id || review.Id} className={styles.reviewCard}>
+            {reviews.length ? reviews.map((review) => (
+              <article key={review.id} className={styles.reviewCard}>
                 <div className={styles.reviewHeader}>
-                  <strong>{review.user || review.userName || review.UserName}</strong>
-                  <span>{review.date || review.Date}</span>
+                  <strong>{review.user}</strong>
+                  <span>{review.date}</span>
                 </div>
-                <div className={styles.reviewStars}>{'★'.repeat(review.rating || review.Rating || 5)}</div>
-                <p>{review.text || review.comment || review.Comment}</p>
+                <div className={styles.reviewStars}>{'★'.repeat(review.rating)}</div>
+                <p>{t(review.text)}</p>
               </article>
-            ))}
+            )) : <p>{t('No reviews yet.')}</p>}
           </div>
         </section>
 
-        {related.length > 0 && (
         <section className={styles.relatedSection}>
           <div className={styles.sectionHeader}>
             <h2>{t('Similar items')}</h2>
@@ -254,11 +193,10 @@ export default function ProductPage() {
           </div>
           <div className={styles.relatedGrid}>
             {related.map((item) => (
-                <ProductCard key={item.id || item.Id} product={item} />
+              <ProductCard key={item.id} product={item} />
             ))}
           </div>
         </section>
-        )}
       </div>
     </div>
   )

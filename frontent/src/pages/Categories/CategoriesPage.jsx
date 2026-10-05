@@ -2,12 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchCategories } from '../../services/mockApi'
 import { useLanguage } from '../../context/useLanguage'
-
 import styles from './CategoriesPage.module.scss'
 
 export default function CategoriesPage() {
-  const [categoriesList, setCategoriesList] = useState([])
-  const [loading, setLoading] = useState(true)
   const { t } = useLanguage()
   const [categories, setCategories] = useState([])
 
@@ -23,28 +20,16 @@ export default function CategoriesPage() {
           <h1>{t('Browse digital essentials')}</h1>
         </div>
 
-        {loading ? (
-          <div className={styles.emptyState}>Loading categories...</div>
-        ) : (
         <div className={styles.grid}>
-            {categoriesList.map((category) => {
-              const categoryKey = category.slug || category.id
-
-              return (
-                <Link
-                  key={category.id || category.slug}
-                  to={`/catalog?category=${categoryKey}`}
-                  className={styles.card}
-                >
-                  {category.icon && <span className={styles.icon}>{category.icon}</span>}
-                  <h3>{category.name}</h3>
-                  {category.description && <p>{category.description}</p>}
-                  <strong>{t('Explore')}</strong>
+          {categories.map((category) => (
+            <Link key={category.id} to={`/catalog?category=${category.id}`} className={styles.card}>
+              <span className={styles.icon}>{category.icon}</span>
+              <h3>{t(category.name)}</h3>
+              <p>{t(category.description)}</p>
+              <strong>{t('Explore')}</strong>
             </Link>
-              )
-            })}
+          ))}
         </div>
-        )}
       </div>
     </div>
   )

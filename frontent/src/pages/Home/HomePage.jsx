@@ -5,7 +5,6 @@ import { fetchCategories, fetchFeaturedProducts, fetchNewestProducts, fetchPopul
 import { useLanguage } from '../../context/useLanguage'
 import styles from './HomePage.module.scss'
 
-
 export default function HomePage() {
   const { t } = useLanguage()
   const { formatCurrency } = useLanguage()
@@ -24,12 +23,6 @@ export default function HomePage() {
         fetchPopularProducts(),
         fetchProducts(),
       ])
-
-    // Перевіряємо статус кожного запиту:
-    const cats = results[0].status === 'fulfilled' ? results[0].value : []
-    const fProducts = results[1].status === 'fulfilled' ? results[1].value : []
-    const newest = results[2].status === 'fulfilled' ? results[2].value : []
-    const pop = results[3].status === 'fulfilled' ? results[3].value : []
 
       setCategories(cats)
       setFeatured(fProducts)
@@ -90,7 +83,6 @@ export default function HomePage() {
             <h2>{t('Browse categories')}</h2>
             <Link to="/categories">{t('View all')}</Link>
           </div>
-          
           <div className={styles.categoryGrid}>
             {categories.map((category) => (
               <Link key={category.id} to={`/catalog?category=${category.slug}`} className={styles.categoryCard}>

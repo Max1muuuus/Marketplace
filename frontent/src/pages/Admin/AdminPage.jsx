@@ -4,6 +4,7 @@ import {
   createMyProduct,
   createSeller,
   deleteAdminRating,
+  deleteAdminOrder,
   deleteAdminReview,
   deleteAdminUser,
   deleteCategory,
@@ -89,6 +90,8 @@ export default function AdminPage() {
       await deleteAdminReview(id)
     } else if (collection === 'users') {
       await deleteAdminUser(id)
+    } else if (collection === 'orders') {
+      await deleteAdminOrder(id)
     } else if (collection === 'products') {
       await deleteMyProduct(id)
     } else if (collection === 'categories') {
@@ -237,7 +240,7 @@ export default function AdminPage() {
     )
 
     if (section === 'Orders') return table(['Order', 'Customer', 'Status', 'Total'], data.orders.map((order) => (
-      <tr key={order.id}><td>{order.id}</td><td>{order.customer}</td><td>{t(order.status)}</td><td>{formatCurrency(order.total)}</td><td>—</td></tr>
+      <tr key={order.id}><td>{order.id}</td><td>{order.customer}</td><td>{t(order.status)}</td><td>{formatCurrency(order.total)}</td><td><div className={styles.rowActions}><button type="button" className={styles.danger} onClick={() => { if (window.confirm(t('Delete this order permanently?'))) removeEntity('orders', order.id) }}>{t('Delete')}</button></div></td></tr>
     )))
 
     const reviewRows = [

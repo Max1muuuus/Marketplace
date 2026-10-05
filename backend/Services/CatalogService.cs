@@ -2,11 +2,6 @@ using System.Text.Json;
 using backend.DTOs;
 using backend.Entities;
 using backend.Repositories;
-<<<<<<< HEAD
-using backend.Mappers;
-namespace backend.Services;
-
-=======
 
 namespace backend.Services;
 
@@ -21,7 +16,6 @@ public interface ICatalogService
     Task<List<ProductDto>> GetPopularAsync();
 }
 
->>>>>>> origin/main
 public class CatalogService : ICatalogService
 {
     private readonly ICategoryRepository _categoryRepository;
@@ -38,19 +32,6 @@ public class CatalogService : ICatalogService
     public async Task<List<CategoryDto>> GetCategoriesAsync()
     {
         var categories = await _categoryRepository.GetAllAsync();
-<<<<<<< HEAD
-        return categories.Select(CategoryMappingExtensions.ToDto).ToList();
-    }
-
-    public async Task<List<ProductDto>> GetProductsAsync(GetProductsDto request)
-    {
-        var products = await _productRepository.GetFilteredAsync(request);
-        List<ProductDto> l = new List<ProductDto>();
-        foreach (var product in products) { 
-            l.Add(ProductMappingExtensions.ToDto(product));
-        }
-        return l;
-=======
         return categories.Select(MapCategory).ToList();
     }
 
@@ -58,31 +39,17 @@ public class CatalogService : ICatalogService
     {
         var products = await _productRepository.GetFilteredAsync(search, category, brand, minPrice, maxPrice, rating, sort);
         return products.Select(MapProduct).ToList();
->>>>>>> origin/main
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(int id)
     {
         var product = await _productRepository.GetByIdAsync(id);
-<<<<<<< HEAD
-        return product == null ? null : ProductMappingExtensions.ToDto(product);
-=======
         return product == null ? null : MapProduct(product);
->>>>>>> origin/main
     }
 
     public async Task<List<ReviewDto>> GetReviewsByProductIdAsync(int productId)
     {
         var reviews = await _reviewRepository.GetByProductIdAsync(productId);
-<<<<<<< HEAD
-        return reviews.Select(ReviewMappingExtensions.ToDto).ToList();
-    }
-
-    public async Task<List<ProductDto>> GetFeaturedAsync(int n)
-    {
-        var products = await _productRepository.GetAllAsync();
-        return products.OrderByDescending(x => x.Rating).Take(n).Select(ProductMappingExtensions.ToDto).ToList();
-=======
         return reviews.Select(r => new ReviewDto
         {
             Id = r.Id,
@@ -190,6 +157,5 @@ public class CatalogService : ICatalogService
         {
             return new();
         }
->>>>>>> origin/main
     }
 }

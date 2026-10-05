@@ -1,33 +1,40 @@
 using backend.Data;
 using backend.DTOs;
 using backend.Entities;
-using backend.Mappers;
-using backend.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services;
 
+public interface IOrderService
+{
+    Task<List<OrderDto>> GetOrdersAsync(int? userId = null);
+    Task<OrderDto?> CreateOrderAsync(int? userId, CreateOrderRequest request);
+}
 
 public class OrderService : IOrderService
 {
-    private readonly IOrderRepository _orderRepository;
-    private readonly IOrderItemRepository _orderItemRepository;
-    private readonly IProductRepository _productRepository;
+    private const decimal ShippingFee = 299m;
+    private readonly AppDbContext _context;
 
-    public OrderService(IOrderRepository orderRepository, IOrderItemRepository orderItemRepository, IProductRepository productRepository)
+    public OrderService(AppDbContext context)
     {
-        _orderRepository = orderRepository;
-        _orderItemRepository = orderItemRepository;
-        _productRepository = productRepository;
+        _context = context;
     }
 
     public async Task<List<OrderDto>> GetOrdersAsync(int? userId = null)
     {
-        var orders = await _orderRepository.GetAllAsync(userId);
-        return orders.Select(OrderMappingExtensions.ToDto).ToList();
+        var query = _context.Orders
+            .Include(x => x.Items)
+            .AsQueryable();
+
+        if (userId.HasValue)
+            query = query.Where(x => x.UserId == userId.Value);
+
+        var orders = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
+        return orders.Select(MapOrder).ToList();
     }
 
-    public async Task<OrderDto?> CreateOrderAsync(int? userId, CreateOrderDto request)
+    public async Task<OrderDto?> CreateOrderAsync(int? userId, CreateOrderRequest request)
     {
         if (request.Items == null || !request.Items.Any())
             return null;
@@ -41,7 +48,6 @@ public class OrderService : IOrderService
 
         await using var transaction = await _context.Database.BeginTransactionAsync();
 
-        var order = new OrderEntity
         var order = new Order
         {
             UserId = userId,
@@ -58,11 +64,11 @@ public class OrderService : IOrderService
 
         foreach (var item in requestedItems)
         {
-            var product = await _productRepository.GetByIdAsync(item.ProductId);
-            if (product == null || item.Quantity <= 0)
-                continue;
+            var product = await _context.Products.FindAsync(item.ProductId);
+            if (product == null || product.Stock < item.Quantity)
+                return null;
 
-            order.Items.Add(new OrderItemEntity
+            order.Items.Add(new OrderItem
             {
                 ProductId = product.Id,
                 ProductName = product.Name,
@@ -81,10 +87,6 @@ public class OrderService : IOrderService
             return null;
 
         order.TotalAmount += ShippingFee;
-
-        await _orderRepository.AddAsync(order);
-
-        return OrderMappingExtensions.ToDto(order);
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();

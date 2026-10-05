@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
-import { useAuth } from '../../context/AuthContext'
-import { createOrderRequest } from '../../services/mockApi'
 import { useLanguage } from '../../context/useLanguage'
 import { createOrderRequest } from '../../services/mockApi'
 import styles from './CheckoutPage.module.scss'
@@ -19,11 +17,8 @@ const initialForm = {
 }
 
 export default function CheckoutPage() {
-  const navigate = useNavigate()
-  const { user } = useAuth()
-    const { items, subtotal, getCheckoutPayload, clearCart } = useCart()
-    const { t, formatCurrency } = useLanguage()
-
+  const { t, formatCurrency } = useLanguage()
+  const { items, subtotal, clearCart } = useCart()
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
@@ -31,36 +26,18 @@ export default function CheckoutPage() {
   const shipping = subtotal > 0 ? 299 : 0
   const total = subtotal + shipping
 
-  // Автозаповнення даних з профілю користувача
-  useEffect(() => {
-    if (user) {
-      setForm((current) => ({
-        ...current,
-        firstName: user.firstName || current.firstName,
-        lastName: user.lastName || current.lastName,
-        email: user.email || current.email,
-      }))
-    }
-  }, [user])
-
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: '' }))
-    setSubmitError('')
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     const nextErrors = {}
 
-    if (!items.length) {
-      setSubmitError('Ваш кошик порожній')
-      return
-    }
-
     Object.entries(form).forEach(([key, value]) => {
       if (!value && key !== 'delivery' && key !== 'payment') {
-        nextErrors[key] = 'Це поле є обов’язковим'
+        nextErrors[key] = 'This field is required'
       }
     })
 
@@ -85,26 +62,6 @@ export default function CheckoutPage() {
     }
   }
 
-      await createOrderRequest(orderPayload)
-
-      // Очищаємо локальний кошик та перенаправляємо на сторінку замовлень
-      await clearCart()
-      navigate('/orders')
-    } catch (error) {
-      console.error('Помилка при оформленні замовлення:', error)
-      setSubmitError(error.message || 'Не вдалося оформити замовлення. Спробуйте ще раз.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const formatCurrency = (amount) =>
-    new Intl.NumberFormat('uk-UA', {
-      style: 'currency',
-      currency: 'UAH',
-      maximumFractionDigits: 0,
-    }).format(amount)
-
   return (
     <div className={styles.page}>
       <div className={styles.container}>
@@ -112,8 +69,6 @@ export default function CheckoutPage() {
           <span className={styles.eyebrow}>{t('Checkout')}</span>
           <h1>{t('Complete your order')}</h1>
         </div>
-
-        {submitError && <div className={styles.errorMessage}>{submitError}</div>}
 
         <div className={styles.layout}>
           <form className={styles.form} onSubmit={handleSubmit}>
@@ -183,10 +138,8 @@ export default function CheckoutPage() {
             <div className={styles.productList}>
               {items.length ? (
                 items.map((item) => (
-                  <div key={item.id || item.productId} className={styles.itemRow}>
-                    <span>
-                      {item.name || item.title} x {item.quantity}
-                    </span>
+                  <div key={item.id} className={styles.itemRow}>
+                    <span>{item.name} x {item.quantity}</span>
                     <strong>{formatCurrency(item.price * item.quantity)}</strong>
                   </div>
                 ))
