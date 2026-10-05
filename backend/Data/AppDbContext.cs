@@ -24,24 +24,7 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-
-        modelBuilder.Entity<FavoriteEntity>()
-                .HasIndex(f => new { f.UserId, f.ProductId })
-                .IsUnique();
-
-        modelBuilder.Entity<FavoriteEntity>()
-                .HasOne(f => f.User)
-                .WithMany(u => u.Favorites)
-                .HasForeignKey(f => f.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<FavoriteEntity>()
-            .HasOne(f => f.Product)
-            .WithMany(p => p.Favorites)
-            .HasForeignKey(f => f.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<UserEntity>(entity =>
+        modelBuilder.Entity<User>(entity =>
         {
             entity.HasIndex(x => x.Email).IsUnique();
             entity.Property(x => x.Email).HasMaxLength(255);
@@ -50,7 +33,7 @@ public class AppDbContext : DbContext
             entity.Property(x => x.Role).HasMaxLength(50);
         });
 
-        modelBuilder.Entity<CategoryEntity>(entity =>
+        modelBuilder.Entity<Category>(entity =>
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).HasMaxLength(100);
@@ -59,14 +42,14 @@ public class AppDbContext : DbContext
             entity.HasIndex(x => x.Slug).IsUnique();
         });
 
-        modelBuilder.Entity<SellerEntity>(entity =>
+        modelBuilder.Entity<Seller>(entity =>
         {
             entity.Property(x => x.Name).HasMaxLength(150);
             entity.Property(x => x.Location).HasMaxLength(150);
             entity.Property(x => x.Logo).HasMaxLength(50);
         });
 
-        modelBuilder.Entity<ProductEntity>(entity =>
+        modelBuilder.Entity<Product>(entity =>
         {
             entity.Property(x => x.Price).HasPrecision(18, 2);
             entity.Property(x => x.OldPrice).HasPrecision(18, 2);
@@ -94,7 +77,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<ReviewEntity>(entity =>
+        modelBuilder.Entity<Review>(entity =>
         {
             entity.HasOne(x => x.Product)
                 .WithMany(x => x.Reviews)
@@ -107,7 +90,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
-        modelBuilder.Entity<OrderEntity>(entity =>
+        modelBuilder.Entity<Order>(entity =>
         {
             entity.Property(x => x.TotalAmount).HasPrecision(18, 2);
             entity.Property(x => x.CustomerName).HasMaxLength(150);
@@ -125,7 +108,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        modelBuilder.Entity<OrderItemEntity>(entity =>
+        modelBuilder.Entity<OrderItem>(entity =>
         {
             entity.Property(x => x.Price).HasPrecision(18, 2);
             entity.Property(x => x.ProductName).HasMaxLength(200);

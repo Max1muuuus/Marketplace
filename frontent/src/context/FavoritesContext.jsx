@@ -37,7 +37,6 @@ export function FavoritesProvider({ children }) {
       return { ...currentByOwner, [ownerKey]: next }
     })
   }
-      })
 
   const removeFavorites = (ids) => {
     setFavoritesByOwner((current) => ({
@@ -46,9 +45,7 @@ export function FavoritesProvider({ children }) {
     }))
   }
 
-  const isFavorite = (id) => {
-    return favorites.some((item) => (typeof item === 'object' ? item.id === id : item === id))
-  }
+  const isFavorite = (id) => favorites.includes(id)
 
   const value = { favorites, toggleFavorite, removeFavorites, isFavorite }
 

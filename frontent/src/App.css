@@ -25,9 +25,9 @@
   --bg: #f4f7fb;
   --bg-elevated: rgba(255, 255, 255, 0.88);
   --bg-soft: rgba(15, 23, 42, 0.04);
-  --panel: rgba(255, 255, 255, 0.9);
-  --panel-strong: rgba(255, 255, 255, 0.96);
-  --line: rgba(15, 23, 42, 0.08);
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --line: #d7dee8;
   --text: #101827;
   --text-soft: #475467;
   --text-muted: #667085;

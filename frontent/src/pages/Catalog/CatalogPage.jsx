@@ -4,24 +4,17 @@ import ProductCard from '../../components/ProductCard/ProductCard'
 import SearchBar from '../../components/Search/SearchBar'
 import { fetchCategories, fetchProducts } from '../../services/mockApi'
 import { useLanguage } from '../../context/useLanguage'
-
 import styles from './CatalogPage.module.scss'
 
 export default function CatalogPage() {
   const { t } = useLanguage()
   const [searchParams, setSearchParams] = useSearchParams()
-
-  const [productsList, setProductsList] = useState([])
-  const [categoriesList, setCategoriesList] = useState([])
-  const [loading, setLoading] = useState(false)
-
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('featured')
   const [view, setView] = useState('grid')
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [filters, setFilters] = useState({
-    category: searchParams.get('category') || '',
     brand: '',
     rating: '',
     status: '',
@@ -49,70 +42,29 @@ export default function CatalogPage() {
         ),
       )
     }
-    loadCategories()
-  }, [])
 
-  // 2. Синхронізація URL query-параметрів з фільтром категорії
-  useEffect(() => {
-    setFilters((current) => ({
-      ...current,
-      category: searchParams.get('category') || '',
-    }))
-  }, [searchParams])
-
-  // 3. Завантаження товарів з бекенду при зміні фільтрів або сортування
-  useEffect(() => {
-    const loadProducts = async () => {
-      setLoading(true)
-
-      // Маппінг значення UI sort на DTO поля бекенду
-      let sortBy = 'createdat'
-      let sortOrder = 'desc'
-
-      if (sort === 'price-asc') {
-        sortBy = 'price'
-        sortOrder = 'asc'
-      } else if (sort === 'price-desc') {
-        sortBy = 'price'
-        sortOrder = 'desc'
-      } else if (sort === 'rating') {
-        sortBy = 'rating'
-        sortOrder = 'desc'
+    if (selectedCategory) {
+      nextProducts = nextProducts.filter((product) => product.category === selectedCategory || categories.find((category) => category.slug === selectedCategory)?.id === product.category)
     }
 
-      const data = await fetchProducts({
-        search,
-        category: filters.category,
-        brand: filters.brand,
-        rating: filters.rating,
-        minPrice: filters.minPrice,
-        maxPrice: filters.maxPrice,
-        sortBy,
-        sortOrder,
-      })
-
-      setProductsList(Array.isArray(data) ? data : [])
-      setLoading(false)
+    if (filters.brand) {
+      nextProducts = nextProducts.filter((product) => product.brand === filters.brand)
     }
 
-    // Додаємо невеликий debounce для текстового пошуку, щоб не спамити бекенд
-    const timeoutId = setTimeout(() => {
-      loadProducts()
-    }, 300)
+    if (filters.rating) {
+      nextProducts = nextProducts.filter((product) => product.rating >= Number(filters.rating))
+    }
 
-    return () => clearTimeout(timeoutId)
-  }, [search, filters, sort])
+    if (filters.status) {
+      nextProducts = nextProducts.filter((product) => product.status === filters.status)
+    }
 
-  // Динамічний список брендів з отриманих товарів
-  const brands = [...new Set(productsList.map((product) => product.brand).filter(Boolean))]
+    if (filters.minPrice) {
+      nextProducts = nextProducts.filter((product) => product.price >= Number(filters.minPrice))
+    }
 
-  const handleCategoryChange = (e) => {
-    const val = e.target.value
-    setFilters((current) => ({ ...current, category: val }))
-    if (val) {
-      setSearchParams({ category: val })
-    } else {
-      setSearchParams({})
+    if (filters.maxPrice) {
+      nextProducts = nextProducts.filter((product) => product.price <= Number(filters.maxPrice))
     }
 
     if (sort === 'price-asc') {
@@ -141,27 +93,25 @@ export default function CatalogPage() {
           <aside className={styles.sidebar}>
             <div className={styles.filterGroup}>
               <h3>{t('Category')}</h3>
-              <select value={filters.category} onChange={handleCategoryChange}>
+              <select value={selectedCategory} onChange={(event) => {
+                const next = new URLSearchParams(searchParams)
+                if (event.target.value) next.set('category', event.target.value)
+                else next.delete('category')
+                setSearchParams(next)
+              }}>
                 <option value="">{t('All categories')}</option>
-                {categoriesList.map((cat) => (
-                  <option key={cat.id || cat.slug} value={cat.slug || cat.id}>
-                    {cat.name}
-                  </option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>{t(category.name)}</option>
                 ))}
               </select>
             </div>
 
             <div className={styles.filterGroup}>
               <h3>{t('Brand')}</h3>
-              <select
-                value={filters.brand}
-                onChange={(e) => setFilters((curr) => ({ ...curr, brand: e.target.value }))}
-              >
+              <select value={filters.brand} onChange={(event) => setFilters((current) => ({ ...current, brand: event.target.value }))}>
                 <option value="">{t('Any brand')}</option>
-                {brands.map((brand) => (
-                  <option key={brand} value={brand}>
-                    {brand}
-                  </option>
+                {[...new Set(products.map((product) => product.brand))].map((brand) => (
+                  <option key={brand} value={brand}>{brand}</option>
                 ))}
               </select>
             </div>
@@ -169,27 +119,14 @@ export default function CatalogPage() {
             <div className={styles.filterGroup}>
               <h3>{t('Price')}</h3>
               <div className={styles.inlineInputs}>
-                <input
-                  type="number"
-                  placeholder={t('Min')}
-                  value={filters.minPrice}
-                  onChange={(e) => setFilters((curr) => ({ ...curr, minPrice: e.target.value }))}
-                />
-                <input
-                  type="number"
-                  placeholder={t('Max')}
-                  value={filters.maxPrice}
-                  onChange={(e) => setFilters((curr) => ({ ...curr, maxPrice: e.target.value }))}
-                />
+                <input type="number" placeholder={t('Min')} value={filters.minPrice} onChange={(event) => setFilters((current) => ({ ...current, minPrice: event.target.value }))} />
+                <input type="number" placeholder={t('Max')} value={filters.maxPrice} onChange={(event) => setFilters((current) => ({ ...current, maxPrice: event.target.value }))} />
               </div>
             </div>
 
             <div className={styles.filterGroup}>
               <h3>{t('Rating')}</h3>
-              <select
-                value={filters.rating}
-                onChange={(e) => setFilters((curr) => ({ ...curr, rating: e.target.value }))}
-              >
+              <select value={filters.rating} onChange={(event) => setFilters((current) => ({ ...current, rating: event.target.value }))}>
                 <option value="">{t('All ratings')}</option>
                 <option value="4.5">4.5+</option>
                 <option value="4.7">4.7+</option>
@@ -209,7 +146,7 @@ export default function CatalogPage() {
 
           <main className={styles.results}>
             <div className={styles.toolbar}>
-                          <p>{productsList.length} {t('products found')}</p>
+              <p>{visibleProducts.length} {t('products found')}</p>
               <div className={styles.controls}>
                 <select value={sort} onChange={(event) => setSort(event.target.value)}>
                   <option value="featured">{t('Featured')}</option>
@@ -225,10 +162,8 @@ export default function CatalogPage() {
             </div>
 
             <div className={view === 'grid' ? styles.grid : styles.listGrid}>
-              {loading ? (
-                <div className={styles.emptyState}>Loading products...</div>
-              ) : productsList.length ? (
-                productsList.map((product) => (
+              {visibleProducts.length ? (
+                visibleProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))
               ) : (

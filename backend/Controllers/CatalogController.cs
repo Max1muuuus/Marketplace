@@ -60,9 +60,16 @@ public class CatalogController : ControllerBase
     }
 
     [HttpGet("products")]
-    public async Task<ActionResult<List<ProductDto>>> GetProducts([FromQuery] GetProductsDto request)
+    public async Task<ActionResult<List<ProductDto>>> GetProducts(
+        [FromQuery] string? search,
+        [FromQuery] string? category,
+        [FromQuery] string? brand,
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
+        [FromQuery] double? rating,
+        [FromQuery] string? sort)
     {
-        var result = await _catalogService.GetProductsAsync(request);
+        var result = await _catalogService.GetProductsAsync(search, category, brand, minPrice, maxPrice, rating, sort);
         return Ok(result);
     }
 

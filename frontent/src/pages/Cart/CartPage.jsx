@@ -5,19 +5,9 @@ import styles from './CartPage.module.scss'
 
 export default function CartPage() {
   const { t, formatCurrency } = useLanguage()
-  const { items, updateQuantity, removeFromCart, subtotal, loading } = useCart()
+  const { items, updateQuantity, removeFromCart, subtotal } = useCart()
   const shipping = subtotal > 0 ? 299 : 0
   const total = subtotal + shipping
-
-  if (loading) {
-  return (
-    <div className={styles.page}>
-      <div className={styles.container}>
-          <p>Завантаження кошика...</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className={styles.page}>
@@ -30,17 +20,13 @@ export default function CartPage() {
         {items.length ? (
           <div className={styles.layout}>
             <div className={styles.items}>
-              {items.map((item) => {
-                const id = item.productId ?? item.id
-                return (
-                  <article key={id} className={styles.itemCard}>
-                    <img src={item.image || item.productImage} alt={item.name || item.productName} />
+              {items.map((item) => (
+                <article key={item.id} className={styles.itemCard}>
+                  <img src={item.image} alt={item.name} />
                   <div className={styles.itemContent}>
                     <div className={styles.itemHeader}>
-                        <h3>{item.name || item.productName}</h3>
-                        <button type="button" onClick={() => removeFromCart(id)}>
-                          {t('Remove')}
-                        </button>
+                      <h3>{item.name}</h3>
+                      <button type="button" onClick={() => removeFromCart(item.id)}>{t('Remove')}</button>
                     </div>
                     <div className={styles.priceRow}>
                       <strong>{formatCurrency(item.price)}</strong>
@@ -52,33 +38,15 @@ export default function CartPage() {
                     </div>
                   </div>
                 </article>
-                )
-              })}
+              ))}
             </div>
 
             <aside className={styles.summary}>
               <h3>{t('Order summary')}</h3>
-              <div className={styles.line}>
-                <span>{t('Subtotal')}</span>
-                <strong>
-                  {formatCurrency(subtotal)}
-                </strong>
-              </div>
-              <div className={styles.line}>
-                <span>{t('Shipping')}</span>
-                <strong>
-                  {formatCurrency(shipping)}
-                </strong>
-              </div>
-              <div className={`${styles.line} ${styles.total}`}>
-                <span>{t('Total')}</span>
-                <strong>
-                  {formatCurrency(total)}
-                </strong>
-              </div>
-              <Link to="/checkout" className={styles.checkoutButton}>
-                {t('Proceed to checkout')}
-              </Link>
+              <div className={styles.line}><span>{t('Subtotal')}</span><strong>{formatCurrency(subtotal)}</strong></div>
+              <div className={styles.line}><span>{t('Shipping')}</span><strong>{formatCurrency(shipping)}</strong></div>
+              <div className={`${styles.line} ${styles.total}`}><span>{t('Total')}</span><strong>{formatCurrency(total)}</strong></div>
+              <Link to="/checkout" className={styles.checkoutButton}>{t('Proceed to checkout')}</Link>
             </aside>
           </div>
         ) : (

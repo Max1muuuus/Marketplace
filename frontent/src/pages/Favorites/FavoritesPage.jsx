@@ -25,12 +25,11 @@ export default function FavoritesPage() {
           <h1>{t('Your saved items')}</h1>
         </div>
 
-        {items.length > 0 ? (
+        {items.length ? (
           <div className={styles.grid}>
-            {items.map((product) => {
-              const key = typeof product === 'object' ? product.id : product
-              return <ProductCard key={key} product={product} />
-            })}
+            {items.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
           </div>
         ) : (
           <div className={styles.emptyState}>
