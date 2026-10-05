@@ -59,27 +59,15 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div className={styles.field}>
-            <label>{t('Email')}</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(event) =>
-                setForm({ ...form, email: event.target.value })
-              }
-            />
-            {errors.email ? <small>{errors.email}</small> : null}
+            <label htmlFor="login-email">{t('Email')}</label>
+            <input id="login-email" autoComplete="username" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            {errors.email ? <small>{t(errors.email)}</small> : null}
           </div>
 
           <div className={styles.field}>
-            <label>{t('Password')}</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(event) =>
-                setForm({ ...form, password: event.target.value })
-              }
-            />
-            {errors.password ? <small>{errors.password}</small> : null}
+            <label htmlFor="login-password">{t('Password')}</label>
+            <input id="login-password" autoComplete="current-password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+            {errors.password ? <small>{t(errors.password)}</small> : null}
           </div>
 
           <button
@@ -90,7 +78,7 @@ export default function LoginPage() {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-        <p className={styles.hint}>{t('Admin demo:')} <strong>admin@markethub.com</strong> / <strong>admin123</strong></p>
+        <p className={styles.hint}>{t('Admin demo:')} <strong>admin@marketplace.test</strong> / <strong>Admin123!</strong></p>
         <p>
           {t('No account yet?')} <Link to="/register">{t('Create one')}</Link>
         </p>

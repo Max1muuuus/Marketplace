@@ -63,6 +63,16 @@ public class ProductRepository : IProductRepository
             .OrderBy(x => x.Name)
             .ToListAsync();
 
+    public async Task<List<Product>> GetNewestAsync()
+        => await _context.Products
+            .Include(x => x.Category)
+            .Include(x => x.Seller)
+            .AsNoTracking()
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .Take(6)
+            .ToListAsync();
+
     public async Task<Product?> GetByIdAsync(int id)
         => await _context.Products
             .Include(x => x.Category)

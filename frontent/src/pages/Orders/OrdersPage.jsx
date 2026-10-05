@@ -1,25 +1,42 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { fetchOrders } from '../../services/mockApi'
 import { useLanguage } from '../../context/useLanguage'
 import styles from './OrdersPage.module.scss'
 
 export default function OrdersPage() {
   const { t, formatCurrency } = useLanguage()
+  const { user } = useAuth()
+  const userId = user?.id
   const [orders, setOrders] = useState([])
+  const [loadedUserId, setLoadedUserId] = useState(null)
+  const loading = userId != null && loadedUserId !== userId
+  const [error, setError] = useState('')
 
   useEffect(() => {
+    if (userId == null) return
+
+    let cancelled = false
     const load = async () => {
       try {
-      const data = await fetchOrders()
-        setOrders(Array.isArray(data) ? data : [])
-      } catch (error) {
-        console.error('Помилка завантаження замовлень:', error)
-    }
+        const data = await fetchOrders()
+        if (!cancelled) {
+          setOrders(data)
+          setError('')
+          setLoadedUserId(userId)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError.message || 'Unable to load orders.')
+          setLoadedUserId(userId)
+        }
+      }
     }
 
     load()
-  }, [])
+    return () => { cancelled = true }
+  }, [userId])
 
   return (
     <div className={styles.page}>
@@ -29,20 +46,12 @@ export default function OrdersPage() {
           <h1>{t('My orders')}</h1>
         </div>
 
-        <div className={styles.list}>
-          {orders.map((order) => {
-            // Безпечно рахуємо кількість позицій/товарів
-            const itemCount = Array.isArray(order.items)
-              ? order.items.reduce((sum, i) => sum + (i.quantity || 1), 0)
-              : typeof order.items === 'number'
-              ? order.items
-              : 0
-
-            // Беремо дату та суму з урахуванням назв полів із C# DTO
-            const orderDate = order.date || order.createdAt ? new Date(order.date || order.createdAt).toLocaleDateString('uk-UA') : '—'
-            const totalAmount = order.total ?? order.totalAmount ?? order.price ?? 0
-
-            return (
+        {!user ? <div className={styles.empty}><p>{t('Sign in to view your orders.')}</p><Link to="/login">{t('Login')}</Link></div> : null}
+        {user && loading ? <p className={styles.empty}>{t('Loading orders...')}</p> : null}
+        {user && !loading && error ? <p className={styles.empty} role="alert">{t(error)}</p> : null}
+        {user && !loading && !error && orders.length === 0 ? <div className={styles.empty}><p>{t('You have not placed any orders yet.')}</p><Link to="/catalog">{t('Browse catalog')}</Link></div> : null}
+        {user && !loading && !error && orders.length > 0 ? <div className={styles.list}>
+          {orders.map((order) => (
             <article key={order.id} className={styles.card}>
               <div className={styles.headerRow}>
                 <div>
@@ -53,10 +62,9 @@ export default function OrdersPage() {
               </div>
 
               <div className={styles.meta}>
-                  {/* ВИПРАВЛЕНО: виводимо число itemCount замість об'єкта order.items */}
-                  <span>{itemCount} items</span>
-                  {order.customer && <span>{typeof order.customer === 'object' ? order.customer.name : order.customer}</span>}
-                  {order.seller && <span>{typeof order.seller === 'object' ? order.seller.name : order.seller}</span>}
+                <span>{order.items} {t(order.items === 1 ? 'item' : 'items')}</span>
+                <span>{order.customer}</span>
+                {order.seller ? <span>{order.seller}</span> : null}
               </div>
 
               <div className={styles.footerRow}>
@@ -64,9 +72,8 @@ export default function OrdersPage() {
                 <Link to="/profile">{t('View details')}</Link>
               </div>
             </article>
-            )
-          })}
-        </div>
+          ))}
+        </div> : null}
       </div>
     </div>
   )

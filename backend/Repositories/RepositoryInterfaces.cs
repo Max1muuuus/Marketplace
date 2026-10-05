@@ -20,6 +20,7 @@ public interface ICategoryRepository
 public interface IProductRepository
 {
     Task<List<Product>> GetAllAsync();
+    Task<List<Product>> GetNewestAsync();
     Task<Product?> GetByIdAsync(int id);
     Task<List<Product>> GetFilteredAsync(string? search, string? category, string? brand, decimal? minPrice, decimal? maxPrice, double? rating, string? sort);
 }

@@ -1,33 +1,21 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
 import { useFavorites } from '../../context/FavoritesContext'
 import { useLanguage } from '../../context/useLanguage'
-import { getProducts } from '../../services/marketplaceStore'
+import { fetchProducts } from '../../services/mockApi'
 import styles from './FavoritesPage.module.scss'
 
 export default function FavoritesPage() {
   const { t } = useLanguage()
-  const { favorites, loading } = useFavorites()
+  const { favorites } = useFavorites()
+  const [products, setProducts] = useState([])
 
-  // Нормалізуємо елементи з контексту обраного:
-  // Якщо в масиві вже лежать об'єкти товарів — беремо їх,
-  // якщо об'єкт має вкладений productId — розпаковуємо його.
-  const items = favorites.map((item) => {
-    if (typeof item === 'object' && item !== null) {
-      return item.product || item
-    }
-    return item
-  }).filter(Boolean)
+  useEffect(() => {
+    fetchProducts().then(setProducts).catch((error) => console.error('Unable to load products', error))
+  }, [])
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.container}>
-          <p>Loading favorites...</p>
-        </div>
-      </div>
-    )
-  }
+  const items = products.filter((product) => favorites.includes(product.id))
 
   return (
     <div className={styles.page}>

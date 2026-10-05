@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchCategories } from '../../services/mockApi' // Переконайся в правильності шляху
+import { fetchCategories } from '../../services/mockApi'
 import { useLanguage } from '../../context/useLanguage'
 
 import styles from './CategoriesPage.module.scss'
@@ -9,20 +9,10 @@ export default function CategoriesPage() {
   const [categoriesList, setCategoriesList] = useState([])
   const [loading, setLoading] = useState(true)
   const { t } = useLanguage()
+  const [categories, setCategories] = useState([])
 
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await fetchCategories()
-        setCategoriesList(Array.isArray(data) ? data : [])
-      } catch (error) {
-        console.error('Failed to load categories:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadCategories()
+    fetchCategories().then(setCategories).catch((error) => console.error('Unable to load categories', error))
   }, [])
 
   return (

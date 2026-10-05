@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+import api from './api'
 import api from "./api";
 
 // --- Cart API ---
@@ -132,73 +132,79 @@ export const loginRequest = async (payload) => api.post("/auth/login", payload);
 
 export const registerRequest = async (payload) =>
   api.post("/auth/register", payload);
-=======
-import {
-  authenticateAccount,
-  getCategories,
-  getMarketplaceRatings,
-  getOrders,
-  getProducts,
-  getReviews,
-  getSellers,
-  registerAccount,
-} from './marketplaceStore'
 
-export const fetchProducts = async (filters = {}) => {
-  let results = getProducts()
-  if (filters.search) results = results.filter((product) => `${product.name} ${product.brand} ${product.description}`.toLowerCase().includes(filters.search.toLowerCase()))
-  if (filters.category) results = results.filter((product) => product.category === filters.category)
-  if (filters.brand) results = results.filter((product) => product.brand === filters.brand)
-  if (filters.minPrice) results = results.filter((product) => product.price >= Number(filters.minPrice))
-  if (filters.maxPrice) results = results.filter((product) => product.price <= Number(filters.maxPrice))
-  if (filters.rating) results = results.filter((product) => product.rating >= Number(filters.rating))
-  if (filters.sort === 'price-asc') results.sort((a, b) => a.price - b.price)
-  if (filters.sort === 'price-desc') results.sort((a, b) => b.price - a.price)
-  return results
+const queryString = (filters) => {
+  const params = new URLSearchParams()
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') params.set(key, value)
+  })
+  const query = params.toString()
+  return query ? `?${query}` : ''
 }
 
-export const fetchCategories = async () => getCategories()
+export const fetchProducts = async (filters = {}) => api.get(`/catalog/products${queryString(filters)}`)
 
 export const fetchProductById = async (id) => {
   if (!id) return null
-  return getProducts().find((product) => product.id === id) || null
+  try {
+    return await api.get(`/catalog/products/${id}`)
+  } catch (error) {
+    if (error.status === 404) return null
+    throw error
+  }
 }
 
-export const fetchSellerById = async (id) => {
-  if (!id) return null
-  const products = getProducts()
-  const product = products.find((item) => item.sellerId === Number(id))
-  return getSellers().find((seller) => seller.id === id) || product?.seller || null
-}
+export const fetchSellerById = async (id) => (await fetchProducts()).find((product) => product.sellerId === Number(id))?.seller || null
 
-export const fetchOrders = async () => getOrders()
+export const fetchCategories = async () => api.get('/catalog/categories')
 
-export const fetchReviews = async (productId) => {
-  if (!productId) return []
-  return getReviews().filter((review) => review.productId === productId)
-}
+export const fetchOrders = async () => (await api.get('/orders')).map((order) => ({
+  ...order,
+  date: order.createdAt?.slice(0, 10) || '',
+  customer: order.customerName,
+  total: order.totalAmount,
+  items: order.items?.reduce((count, item) => count + item.quantity, 0) || 0,
+  seller: '',
+}))
 
-export const fetchFeaturedProducts = async () => getProducts().slice(0, 4)
-export const fetchNewestProducts = async () => getProducts().slice(-4).reverse()
-export const fetchPopularProducts = async () => [...getProducts()].sort((a, b) => b.rating - a.rating).slice(0, 4)
+export const fetchReviews = async (productId) => productId ? api.get(`/catalog/products/${productId}/reviews`) : []
+
+export const fetchFeaturedProducts = async () => api.get('/catalog/featured')
+export const fetchNewestProducts = async () => api.get('/catalog/newest')
+export const fetchPopularProducts = async () => api.get('/catalog/popular')
 export const searchProducts = async (query) => fetchProducts({ search: query })
 
-export const loginRequest = async (payload) => ({
-  user: authenticateAccount(payload.email, payload.password),
-  token: `demo-token-${Date.now()}`,
+export const loginRequest = async (payload) => api.post('/auth/login', payload)
+
+export const registerRequest = async (payload) => api.post('/auth/register', payload)
+
+export const createOrderRequest = async (payload) => api.post('/orders', payload)
+
+export const createReviewRequest = async (productId, payload) => api.post(`/catalog/products/${productId}/reviews`, payload)
+
+export const fetchAccountCart = async () => api.get('/account/cart')
+export const saveAccountCart = async (items) => api.put('/account/cart', {
+  items: items.map((item) => ({ productId: Number(item.id), quantity: item.quantity })),
 })
-
-export const registerRequest = async (payload) => ({
-  user: registerAccount(payload),
-  token: `demo-token-${Date.now()}`,
-})
-
-export const createOrderRequest = async (payload) => {
-  const orders = getOrders()
-  const order = { ...payload, id: `ord-${Date.now()}`, date: new Date().toISOString().slice(0, 10), status: 'В обробці' }
-  localStorage.setItem('marketplace-orders', JSON.stringify([order, ...orders]))
-  return order
-}
-
-export const fetchMarketplaceRatings = async () => getMarketplaceRatings()
->>>>>>> origin/main
+export const fetchAccountFavorites = async () => api.get('/account/favorites')
+export const saveAccountFavorites = async (productIds) => api.put('/account/favorites', { productIds })
+export const fetchMyProducts = async () => api.get('/catalog/my-products')
+export const createMyProduct = async (product) => api.post('/catalog/my-products', product)
+export const updateMyProduct = async (id, product) => api.put(`/catalog/my-products/${id}`, product)
+export const deleteMyProduct = async (id) => api.del(`/catalog/my-products/${id}`)
+export const fetchAdminUsers = async () => api.get('/admin/users')
+export const deleteAdminUser = async (id) => api.del(`/admin/users/${id}`)
+export const fetchMarketplaceRatings = async () => api.get('/catalog/ratings')
+export const fetchAccountRating = async () => api.get('/account/rating')
+export const saveAccountRating = async (rating) => api.put('/account/rating', rating)
+export const fetchAdminReviews = async () => api.get('/admin/reviews')
+export const fetchAdminRatings = async () => api.get('/admin/ratings')
+export const deleteAdminReview = async (id) => api.del(`/admin/reviews/${id}`)
+export const deleteAdminRating = async (id) => api.del(`/admin/ratings/${id}`)
+export const createCategory = async (category) => api.post('/admin/categories', category)
+export const updateCategory = async (id, category) => api.put(`/admin/categories/${id}`, category)
+export const deleteCategory = async (id) => api.del(`/admin/categories/${id}`)
+export const fetchSellers = async () => api.get('/catalog/sellers')
+export const createSeller = async (seller) => api.post('/admin/sellers', seller)
+export const updateSeller = async (id, seller) => api.put(`/admin/sellers/${id}`, seller)
+export const deleteSeller = async (id) => api.del(`/admin/sellers/${id}`)

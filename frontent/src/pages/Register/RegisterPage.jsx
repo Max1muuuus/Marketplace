@@ -16,11 +16,10 @@ export default function RegisterPage() {
     event.preventDefault()
     const nextErrors = {}
 
-    if (!form.name.trim()) nextErrors.name = 'Name is required'
-    if (!form.email.trim()) nextErrors.email = 'Email is required'
-    if (!form.password || form.password.length < 6) {
-      nextErrors.password = 'Password must be at least 6 characters'
-    }
+    if (!form.name) nextErrors.name = 'Name is required'
+    if (!form.email) nextErrors.email = 'Email is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) nextErrors.email = 'Enter a valid email address'
+    if (!form.password || form.password.length < 6) nextErrors.password = 'Password must be at least 6 characters'
 
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors)
@@ -42,11 +41,7 @@ export default function RegisterPage() {
       // Після успішної реєстрації перенаправляємо на головну
       navigate('/')
     } catch (error) {
-      const serverMessage =
-        error.response?.data?.message || 'Registration failed. Please try again.'
-      setErrors({ server: serverMessage })
-    } finally {
-      setLoading(false)
+      setErrors({ form: error.message || 'Registration failed. Please try again.' })
     }
   }
 
@@ -59,34 +54,23 @@ export default function RegisterPage() {
         {errors.server && <div className={styles.serverError}>{errors.server}</div>}
 
         <form onSubmit={handleSubmit}>
+          {errors.form ? <p role="alert">{t(errors.form)}</p> : null}
           <div className={styles.field}>
-            <label>{t('Name')}</label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
-            />
-            {errors.name ? <small>{errors.name}</small> : null}
+            <label htmlFor="register-name">{t('Name')}</label>
+            <input id="register-name" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+            {errors.name ? <small>{t(errors.name)}</small> : null}
           </div>
 
           <div className={styles.field}>
-            <label>{t('Email')}</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(event) => setForm({ ...form, email: event.target.value })}
-            />
-            {errors.email ? <small>{errors.email}</small> : null}
+            <label htmlFor="register-email">{t('Email')}</label>
+            <input id="register-email" autoComplete="email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            {errors.email ? <small>{t(errors.email)}</small> : null}
           </div>
 
           <div className={styles.field}>
-            <label>{t('Password')}</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(event) => setForm({ ...form, password: event.target.value })}
-            />
-            {errors.password ? <small>{errors.password}</small> : null}
+            <label htmlFor="register-password">{t('Password')}</label>
+            <input id="register-password" autoComplete="new-password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+            {errors.password ? <small>{t(errors.password)}</small> : null}
           </div>
 
           <button type="submit" className={styles.primaryButton} disabled={loading}>

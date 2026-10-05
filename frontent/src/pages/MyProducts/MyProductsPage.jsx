@@ -2,31 +2,37 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/useLanguage'
-import { createProduct, deleteProduct, getCategories, getProducts, setUserRole, updateProduct } from '../../services/marketplaceStore'
+import { createMyProduct, deleteMyProduct, fetchCategories, fetchMyProducts, updateMyProduct } from '../../services/mockApi'
 import styles from './MyProductsPage.module.scss'
 
 const emptyForm = { name: '', brand: '', category: '', price: '', stock: '', image: '', description: '' }
 
 export default function MyProductsPage() {
   const { user, updateUser } = useAuth()
+  const userId = user?.id
   const { t } = useLanguage()
-  const [products, setProducts] = useState(() => getProducts().filter((product) => product.ownerId === user?.id))
-  const [categories] = useState(getCategories)
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (user?.role === 'customer' && products.length > 0) {
-      setUserRole(user.id, 'seller')
-      updateUser({ role: 'seller' })
-    }
-  }, [products.length, updateUser, user?.id, user?.role])
+    if (userId == null) return
+    let cancelled = false
+    Promise.all([fetchMyProducts(), fetchCategories()]).then(([myProducts, allCategories]) => {
+      if (!cancelled) {
+        setProducts(myProducts)
+        setCategories(allCategories)
+      }
+    }).catch((loadError) => setError(loadError.message || 'Unable to load your listings.'))
+    return () => { cancelled = true }
+  }, [userId])
 
-  const refresh = () => setProducts(getProducts().filter((product) => product.ownerId === user.id))
+  const refresh = async () => setProducts(await fetchMyProducts())
   const changeField = (event) => setForm({ ...form, [event.target.name]: event.target.value })
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault()
     if (!form.category) {
       setError('Choose a category before saving.')
@@ -37,26 +43,24 @@ export default function MyProductsPage() {
       ...form,
       price: Number(form.price),
       stock: Number(form.stock),
-      ownerId: user.id,
-      sellerId: user.id,
+      gallery: [form.image],
+      status: Number(form.stock) > 0 ? 'in-stock' : 'out-of-stock',
     }
 
-    if (editingId) {
-      updateProduct(editingId, {
-        ...productData,
-        gallery: [productData.image],
-        status: productData.stock > 0 ? 'in-stock' : 'out-of-stock',
-      })
-    } else {
-      createProduct(productData)
-      if (user.role === 'customer') {
-        updateUser({ role: 'seller' })
+    try {
+      if (editingId) {
+        await updateMyProduct(editingId, productData)
+      } else {
+        await createMyProduct(productData)
+        if (user.role === 'customer') updateUser({ role: 'seller' })
       }
+      await refresh()
+      setForm(emptyForm)
+      setEditingId(null)
+      setError('')
+    } catch (saveError) {
+      setError(saveError.message || 'Unable to save this listing.')
     }
-    setForm(emptyForm)
-    setEditingId(null)
-    setError('')
-    refresh()
   }
 
   const beginEdit = (product) => {
@@ -74,15 +78,17 @@ export default function MyProductsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const remove = (productId) => {
-    const ownedProduct = products.find((product) => product.id === productId && product.ownerId === user.id)
-    if (!ownedProduct) return
-    deleteProduct(productId)
-    if (editingId === productId) {
-      setEditingId(null)
-      setForm(emptyForm)
+  const remove = async (productId) => {
+    try {
+      await deleteMyProduct(productId)
+      if (editingId === productId) {
+        setEditingId(null)
+        setForm(emptyForm)
+      }
+      await refresh()
+    } catch (removeError) {
+      setError(removeError.message || 'Unable to delete this listing.')
     }
-    refresh()
   }
 
   if (!user) {

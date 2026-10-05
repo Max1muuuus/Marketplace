@@ -253,6 +253,7 @@ const translations = {
     Orders: 'Замовлення',
     'My orders': 'Мої замовлення',
     'Order #': 'Замовлення №',
+    item: 'товар',
     items: 'товарів',
     'View details': 'Переглянути деталі',
     Profile: 'Профіль',

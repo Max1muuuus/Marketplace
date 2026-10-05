@@ -1,88 +1,65 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
-import {
-  fetchCartRequest,
-  addToCartRequest,
-  updateCartQuantityRequest,
-  removeFromCartRequest,
-  clearCartRequest,
-} from '../services/mockApi'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from './AuthContext'
+import { fetchAccountCart, saveAccountCart } from '../services/mockApi'
 
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(false)
-  const { token } = useAuth()
-
-  // Допоміжна функція для безпечного витягування масиву елементів
-  const extractItems = (data) => {
-    if (!data) return []
-    if (Array.isArray(data)) return data
-    if (Array.isArray(data.items)) return data.items
-    return []
-  }
-
-  const fetchCart = useCallback(async () => {
-    if (!token) {
-      setItems([])
-      return
-    }
-
-    try {
-      setLoading(true)
-      const data = await fetchCartRequest()
-      setItems(extractItems(data))
-    } catch (error) {
-      console.error('Помилка при завантаженні кошика:', error)
-      setItems([])
-    } finally {
-      setLoading(false)
-    }
-  }, [token])
+  const { user } = useAuth()
+  const userId = user?.id
+  const ownerKey = userId ?? 'guest'
+  const [itemsByOwner, setItemsByOwner] = useState({ guest: [] })
+  const [loadedUserIds, setLoadedUserIds] = useState([])
+  const items = itemsByOwner[ownerKey] || []
 
   useEffect(() => {
-    fetchCart()
-  }, [fetchCart])
-
-  const addToCart = useCallback(async (product, quantity = 1) => {
-    try {
-      // Перевіряємо ID: якщо product є об'єктом з id/productId
-      const productId = typeof product === 'object' ? (product.id ?? product.productId) : product
-      const data = await addToCartRequest(productId, quantity)
-      if (data) setItems(extractItems(data))
-    } catch (error) {
-      console.error('Помилка додавання товару в кошик:', error)
+    if (userId == null) return
+    let cancelled = false
+    fetchAccountCart().then((savedItems) => {
+      if (!cancelled) {
+        const inStockItems = savedItems.map((item) => ({
+          ...item,
+          quantity: Math.min(item.quantity, item.stock),
+        })).filter((item) => item.quantity > 0)
+        setItemsByOwner((current) => ({ ...current, [userId]: inStockItems }))
+        setLoadedUserIds((current) => current.includes(userId) ? current : [...current, userId])
       }
-  }, [])
+    }).catch((error) => console.error('Unable to load account cart', error))
+    return () => { cancelled = true }
+  }, [userId])
 
-  const updateQuantity = useCallback(async (productId, delta) => {
-    try {
-      const data = await updateCartQuantityRequest(productId, delta)
-      if (data) setItems(extractItems(data))
-    } catch (error) {
-      console.error('Помилка оновлення кількості:', error)
+  useEffect(() => {
+    if (userId != null && loadedUserIds.includes(userId)) {
+      saveAccountCart(itemsByOwner[userId] || []).catch((error) => console.error('Unable to save account cart', error))
     }
-  }, [])
+  }, [itemsByOwner, loadedUserIds, userId])
 
-  const removeFromCart = useCallback(async (productId) => {
-    try {
-      const data = await removeFromCartRequest(productId)
-      if (data) setItems(extractItems(data))
-    } catch (error) {
-      console.error('Помилка видалення товару:', error)
+  const addToCart = (product, quantity = 1) => {
+    setItemsByOwner((currentByOwner) => {
+      const current = currentByOwner[ownerKey] || []
+      const stock = Number(product.stock) || 0
+      if (stock <= 0) return currentByOwner
+      const existing = current.find((item) => item.id === product.id)
+      const next = existing
+        ? current.map((item) =>
+          item.id === product.id ? { ...item, quantity: Math.min(stock, item.quantity + quantity) } : item,
+        )
+        : [...current, { ...product, quantity: Math.min(stock, quantity) }]
+      return { ...currentByOwner, [ownerKey]: next }
+    })
   }
   }, [])
 
-  const clearCart = useCallback(async () => {
-  try {
-    await clearCartRequest()
-  } catch (error) {
-    if (!error.message?.includes('JSON')) {
-      console.error('Помилка очищення кошика:', error)
-    }
-  } finally {
-    setItems([])
+  const updateQuantity = (id, delta) => {
+    setItemsByOwner((currentByOwner) => {
+      const current = currentByOwner[ownerKey] || []
+      const next = current
+        .map((item) =>
+          item.id === id ? { ...item, quantity: Math.min(Number(item.stock) || 0, Math.max(0, item.quantity + delta)) } : item,
+        )
+        .filter((item) => item.quantity > 0)
+      return { ...currentByOwner, [ownerKey]: next }
+    })
   }
 }, [])
 
@@ -92,49 +69,19 @@ export function CartProvider({ children }) {
       const rawId = item.productId ?? item.id ?? item.product?.id
       const cleanProductId = typeof rawId === 'object' ? (rawId.id || rawId._id) : rawId
 
-      return {
-        productId: cleanProductId,
-        quantity: item.quantity,
-  }
-    })
-  }, [items])
+  const removeFromCart = (id) => setItemsByOwner((current) => ({
+    ...current,
+    [ownerKey]: (current[ownerKey] || []).filter((item) => item.id !== id),
+  }))
 
-  const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + (item.price || item.product?.price || 0) * item.quantity, 0),
-    [items]
-  )
+  const clearCart = () => setItemsByOwner((current) => ({ ...current, [ownerKey]: [] }))
 
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
     [items]
   )
 
-  const value = useMemo(
-    () => ({
-      items,
-      loading,
-      addToCart,
-      updateQuantity,
-      removeFromCart,
-      clearCart,
-      getCheckoutPayload,
-      subtotal,
-      itemCount,
-      refreshCart: fetchCart,
-    }),
-    [
-      items,
-      loading,
-      subtotal,
-      itemCount,
-      fetchCart,
-      addToCart,
-      updateQuantity,
-      removeFromCart,
-      clearCart,
-      getCheckoutPayload,
-    ]
-  )
+  const value = { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, itemCount }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

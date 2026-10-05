@@ -46,13 +46,9 @@ export default function CartPage() {
                       <strong>{formatCurrency(item.price)}</strong>
                     </div>
                     <div className={styles.qtyRow}>
-                        <button type="button" onClick={() => updateQuantity(id, -1)}>
-                          -
-                        </button>
+                      <button type="button" aria-label={t('Decrease quantity')} onClick={() => updateQuantity(item.id, -1)}>-</button>
                       <span>{item.quantity}</span>
-                        <button type="button" onClick={() => updateQuantity(id, 1)}>
-                          +
-                        </button>
+                      <button type="button" aria-label={t('Increase quantity')} disabled={item.quantity >= item.stock} onClick={() => updateQuantity(item.id, 1)}>+</button>
                     </div>
                   </div>
                 </article>

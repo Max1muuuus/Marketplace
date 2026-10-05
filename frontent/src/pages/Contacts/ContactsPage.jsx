@@ -38,16 +38,16 @@ export default function ContactsPage() {
 
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.field}>
-              <label>{t('Name')}</label>
-              <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+              <label htmlFor="contact-name">{t('Name')}</label>
+              <input id="contact-name" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
             </div>
             <div className={styles.field}>
-              <label>{t('Email')}</label>
-              <input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+              <label htmlFor="contact-email">{t('Email')}</label>
+              <input id="contact-email" autoComplete="email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
             </div>
             <div className={styles.field}>
-              <label>{t('Message')}</label>
-              <textarea rows="5" value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} />
+              <label htmlFor="contact-message">{t('Message')}</label>
+              <textarea id="contact-message" rows="5" value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} />
             </div>
             <button type="submit" className={styles.primaryButton}>{t('Send message')}</button>
           </form>

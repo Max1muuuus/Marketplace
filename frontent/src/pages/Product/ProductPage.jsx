@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
-import { fetchProductById, fetchProducts, fetchReviews, fetchSellerById } from '../../services/mockApi'
+import { createReviewRequest, fetchProductById, fetchProducts, fetchReviews, fetchSellerById } from '../../services/mockApi'
 import { useCart } from '../../context/CartContext'
 import { useFavorites } from '../../context/FavoritesContext'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/useLanguage'
 import styles from './ProductPage.module.scss'
-import { getProducts, saveProductReview } from '../../services/marketplaceStore'
 
 export default function ProductPage() {
   const { id } = useParams()
@@ -19,7 +18,6 @@ export default function ProductPage() {
   const [seller, setSeller] = useState(null)
   const [reviews, setReviews] = useState([])
   const [related, setRelated] = useState([])
-  
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -63,13 +61,14 @@ export default function ProductPage() {
 
           if (active) {
         setSeller(currentSeller)
-            setReviews(productReviews || [])
-
-            const filteredRelated = (Array.isArray(categoryProducts) ? categoryProducts : [])
-              .filter((entry) => String(entry.id || entry.Id) !== String(productId))
-              .slice(0, 4)
-
-            setRelated(filteredRelated)
+        const productReviews = await fetchReviews(currentProduct.id)
+        setReviews(productReviews)
+        const allProducts = await fetchProducts()
+        setRelated(allProducts.filter((entry) => entry.category === currentProduct.category && entry.id !== currentProduct.id).slice(0, 4))
+        const ownReview = productReviews.find((review) => review.userId === user?.id)
+        if (ownReview) {
+          setReviewRating(String(ownReview.rating))
+          setReviewText(ownReview.text)
         }
       }
       } catch (error) {
@@ -84,19 +83,22 @@ export default function ProductPage() {
     load()
   }, [id, user?.id])
 
-    return () => {
-      active = false
-    }
-  }, [id])
+  const submitReview = async (event) => {
+    event.preventDefault()
+    if (!user || !product) return
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.container}>
-          <p>Loading product details...</p>
-        </div>
-      </div>
-    )
+    await createReviewRequest(product.id, {
+      rating: Number(reviewRating),
+      text: reviewText.trim(),
+    })
+
+    const [updatedProduct, updatedReviews] = await Promise.all([
+      fetchProductById(product.id),
+      fetchReviews(product.id),
+    ])
+    setProduct(updatedProduct)
+    setReviews(updatedReviews)
+    setReviewSaved(true)
   }
 
   if (!product) {
@@ -121,11 +123,6 @@ export default function ProductPage() {
   const ratingAverage = reviews.length
     ? (reviews.reduce((sum, review) => sum + (review.rating ?? review.Rating ?? 0), 0) / reviews.length).toFixed(1)
     : productRating
-
-  // Зчитування даних продавця з БД (Name, Location, Rating)
-  const sellerName = seller?.name || seller?.Name || seller?.storeName || seller?.StoreName || 'Marketplace seller'
-  const sellerLocation = seller?.location || seller?.Location || seller?.city || seller?.City || 'Ukraine'
-  const sellerRating = seller?.rating ?? seller?.Rating ?? 4.8
 
   return (
     <div className={styles.page}>
@@ -170,17 +167,15 @@ export default function ProductPage() {
             <p className={styles.description}>{productDescription}</p>
 
             <div className={styles.quantityRow}>
-              <button type="button" onClick={() => setQuantity((current) => Math.max(1, current - 1))}>-</button>
+              <button type="button" aria-label={t('Decrease quantity')} onClick={() => setQuantity((current) => Math.max(1, current - 1))}>-</button>
               <span>{quantity}</span>
-              <button type="button" onClick={() => setQuantity((current) => current + 1)}>+</button>
+              <button type="button" aria-label={t('Increase quantity')} disabled={quantity >= product.stock} onClick={() => setQuantity((current) => Math.min(product.stock, current + 1))}>+</button>
             </div>
 
             <div className={styles.actionRow}>
-              <button type="button" className={styles.primaryButton} onClick={() => addToCart(product, quantity)}>
-                Add to cart
-              </button>
-              <button type="button" className={styles.secondaryButton} onClick={() => toggleFavorite(product)}>
-                {isFavorite(product.id || product.Id) ? 'Saved' : 'Save'}
+              <button type="button" className={styles.primaryButton} disabled={product.stock <= 0} onClick={() => addToCart(product, quantity)}>{t(product.stock > 0 ? 'Add to cart' : 'Out of stock')}</button>
+              <button type="button" className={styles.secondaryButton} onClick={() => toggleFavorite(product.id)}>
+                {t(isFavorite(product.id) ? 'Saved' : 'Save')}
               </button>
             </div>
 

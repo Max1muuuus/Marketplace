@@ -58,17 +58,6 @@ public static class MarketplaceSeed
 
         await context.Products.AddRangeAsync(products);
 
-        var admin = new UserEntity
-        {
-            Email = "admin@marketplace.test",
-            PasswordHash = "AQAAAAEAACcQAAAAEDLq9g3n+9k3f4R0xo1bGOeYvC2+Zb8m0Vf9T7m8Ukg==",
-            FirstName = "Admin",
-            LastName = "User",
-            Role = "Admin"
-        };
-
-        await context.Users.AddAsync(admin);
-
         var reviews = new[]
         {
             new ReviewEntity { Product = products[0], UserName = "Serhii", Rating = 5, Date = DateTime.UtcNow.AddDays(-10), Text = "Excellent quality and quick delivery." },
@@ -79,6 +68,16 @@ public static class MarketplaceSeed
 
         await context.Reviews.AddRangeAsync(reviews);
         await context.SaveChangesAsync();
+
+        foreach (var product in products)
+        {
+            var productReviews = reviews.Where(review => review.ProductId == product.Id).ToList();
+            product.ReviewCount = productReviews.Count;
+            product.Rating = productReviews.Count == 0 ? 0 : productReviews.Average(review => review.Rating);
+        }
+
+        await context.SaveChangesAsync();
+        await EnsureAdminAsync(context);
     }
 
     private static async Task EnsureAdminAsync(AppDbContext context)

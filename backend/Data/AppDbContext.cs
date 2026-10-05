@@ -9,15 +9,16 @@ public class AppDbContext : DbContext
     {
     }
 
-    public DbSet<UserEntity> Users => Set<UserEntity>();
-    public DbSet<CategoryEntity> Categories => Set<CategoryEntity>();
-    public DbSet<SellerEntity> Sellers => Set<SellerEntity>();
-    public DbSet<ProductEntity> Products => Set<ProductEntity>();
-    public DbSet<ReviewEntity> Reviews => Set<ReviewEntity>();
-    public DbSet<OrderEntity> Orders => Set<OrderEntity>();
-    public DbSet<OrderItemEntity> OrderItems => Set<OrderItemEntity>();
-    public DbSet<FavoriteEntity> Favorites => Set<FavoriteEntity>();
-    public DbSet<CartItemEntity> CartItems => Set<CartItemEntity>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Seller> Sellers => Set<Seller>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<Favorite> Favorites => Set<Favorite>();
+    public DbSet<MarketplaceRating> MarketplaceRatings => Set<MarketplaceRating>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -86,6 +87,11 @@ public class AppDbContext : DbContext
                 .WithMany(x => x.Products)
                 .HasForeignKey(x => x.SellerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.OwnerUser)
+                .WithMany(x => x.Products)
+                .HasForeignKey(x => x.OwnerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ReviewEntity>(entity =>
@@ -98,7 +104,7 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.User)
                 .WithMany(x => x.Reviews)
                 .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<OrderEntity>(entity =>
@@ -133,7 +139,28 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.Product)
                 .WithMany()
                 .HasForeignKey(x => x.ProductId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(x => new { x.UserId, x.ProductId });
+            entity.HasOne(x => x.User).WithMany(x => x.CartItems).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Favorite>(entity =>
+        {
+            entity.HasKey(x => new { x.UserId, x.ProductId });
+            entity.HasOne(x => x.User).WithMany(x => x.Favorites).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<MarketplaceRating>(entity =>
+        {
+            entity.HasIndex(x => x.UserId).IsUnique();
+            entity.Property(x => x.Text).HasMaxLength(500);
+            entity.HasOne(x => x.User).WithMany(x => x.MarketplaceRatings).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

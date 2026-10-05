@@ -1,26 +1,28 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
-import { fetchCategories, fetchFeaturedProducts, fetchNewestProducts, fetchPopularProducts } from '../../services/mockApi'
+import { fetchCategories, fetchFeaturedProducts, fetchNewestProducts, fetchPopularProducts, fetchProducts } from '../../services/mockApi'
 import { useLanguage } from '../../context/useLanguage'
 import styles from './HomePage.module.scss'
 
 
 export default function HomePage() {
   const { t } = useLanguage()
+  const { formatCurrency } = useLanguage()
   const [featured, setFeatured] = useState([])
   const [newProducts, setNewProducts] = useState([])
   const [popular, setPopular] = useState([])
   const [categories, setCategories] = useState([])
+  const [allProducts, setAllProducts] = useState([])
 
   useEffect(() => {
     const load = async () => {
-    // Promise.allSettled чекає виконання всіх запитів, незалежно від того, чи успішні вони
-    const results = await Promise.allSettled([
-      fetchCategories(6),
+      const [cats, fProducts, newest, pop, products] = await Promise.all([
+        fetchCategories(),
         fetchFeaturedProducts(),
         fetchNewestProducts(),
         fetchPopularProducts(),
+        fetchProducts(),
       ])
 
     // Перевіряємо статус кожного запиту:
@@ -33,13 +35,20 @@ export default function HomePage() {
       setFeatured(fProducts)
       setNewProducts(newest)
       setPopular(pop)
-
-    //console.log('Categories loaded:', cats)
-    console.log('Featured products loaded:', fProducts)
+      setAllProducts(products)
     }
 
     load()
   }, [])
+
+  const featuredProduct = featured[0]
+  const averageRating = allProducts.length
+    ? (allProducts.reduce((sum, product) => sum + Number(product.rating || 0), 0) / allProducts.length).toFixed(1)
+    : '—'
+  const discountedProduct = allProducts.find((product) => product.oldPrice && product.oldPrice > product.price)
+  const discountPercent = discountedProduct
+    ? Math.round((discountedProduct.oldPrice - discountedProduct.price) / discountedProduct.oldPrice * 100)
+    : 0
 
   return (
     <div className={styles.page}>
@@ -54,29 +63,31 @@ export default function HomePage() {
               <Link to="/categories" className={styles.secondaryButton}>{t('Explore categories')}</Link>
             </div>
             <div className={styles.statsGrid}>
-              <div><strong>24k+</strong><span>{t('happy buyers')}</span></div>
-              <div><strong>1.2k</strong><span>{t('new arrivals')}</span></div>
-              <div><strong>4.9/5</strong><span>{t('average rating')}</span></div>
+              <div><strong>{allProducts.length}</strong><span>{t('products listed')}</span></div>
+              <div><strong>{categories.length}</strong><span>{t('categories')}</span></div>
+              <div><strong>{averageRating}{averageRating !== '—' ? '/5' : ''}</strong><span>{t('average product rating')}</span></div>
             </div>
           </div>
 
-          <div className={styles.heroVisual}>
-            <div className={styles.imageCard}>
-              <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80" alt="Tech product" />
-            </div>
-            <div className={styles.floatingCard}>
-              <span>{t('Top seller')}</span>
-              <strong>Smart Watch</strong>
-              <em>$240</em>
-            </div>
-          </div>
+          {featuredProduct ? (
+            <Link to={`/product/${featuredProduct.id}`} className={styles.heroVisual}>
+              <div className={styles.imageCard}>
+                <img src={featuredProduct.image} alt={featuredProduct.name} />
+              </div>
+              <div className={styles.floatingCard}>
+                <span>{t('Featured product')}</span>
+                <strong>{featuredProduct.name}</strong>
+                <em>{formatCurrency(featuredProduct.price)}</em>
+              </div>
+            </Link>
+          ) : null}
         </div>
       </section>
 
       <section className={styles.categoriesSection}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
-            <h2>{t('Popular categories')}</h2>
+            <h2>{t('Browse categories')}</h2>
             <Link to="/categories">{t('View all')}</Link>
           </div>
           
@@ -123,7 +134,7 @@ export default function HomePage() {
       <section className={styles.productsSection}>
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
-            <h2>{t('Popular this week')}</h2>
+            <h2>{t('Top rated products')}</h2>
             <Link to="/catalog">{t('View all')}</Link>
           </div>
           <div className={styles.productGrid}>
@@ -137,11 +148,11 @@ export default function HomePage() {
       <section className={styles.promoBanner}>
         <div className={styles.container}>
           <div>
-            <span className={styles.eyebrow}>{t('Flash deal')}</span>
-            <h2>{t('Mid-season sale')}</h2>
-            <p>{t('Up to 50% off on selected gear and accessories for a smarter setup.')}</p>
+            <span className={styles.eyebrow}>{t(discountedProduct ? 'Current offer' : 'Catalog')}</span>
+            <h2>{discountedProduct ? discountedProduct.name : t('Browse the catalog')}</h2>
+            <p>{discountedProduct ? `${discountPercent}% ${t('off')} · ${formatCurrency(discountedProduct.price)}` : t('Explore the available products and current prices.')}</p>
           </div>
-          <Link to="/catalog" className={styles.primaryButton}>{t('Claim offer')}</Link>
+          <Link to={discountedProduct ? `/product/${discountedProduct.id}` : '/catalog'} className={styles.primaryButton}>{t(discountedProduct ? 'View offer' : 'Browse catalog')}</Link>
         </div>
       </section>
 

@@ -1,16 +1,12 @@
 using backend.Data;
 using backend.DTOs;
 using backend.Entities;
-<<<<<<< HEAD
 using backend.Mappers;
 using backend.Repositories;
-=======
->>>>>>> origin/main
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services;
 
-<<<<<<< HEAD
 
 public class OrderService : IOrderService
 {
@@ -23,54 +19,30 @@ public class OrderService : IOrderService
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
         _productRepository = productRepository;
-=======
-public interface IOrderService
-{
-    Task<List<OrderDto>> GetOrdersAsync(int? userId = null);
-    Task<OrderDto?> CreateOrderAsync(int? userId, CreateOrderRequest request);
-}
-
-public class OrderService : IOrderService
-{
-    private readonly AppDbContext _context;
-
-    public OrderService(AppDbContext context)
-    {
-        _context = context;
->>>>>>> origin/main
     }
 
     public async Task<List<OrderDto>> GetOrdersAsync(int? userId = null)
     {
-<<<<<<< HEAD
         var orders = await _orderRepository.GetAllAsync(userId);
         return orders.Select(OrderMappingExtensions.ToDto).ToList();
     }
 
     public async Task<OrderDto?> CreateOrderAsync(int? userId, CreateOrderDto request)
-=======
-        var query = _context.Orders
-            .Include(x => x.Items)
-            .AsQueryable();
-
-        if (userId.HasValue)
-            query = query.Where(x => x.UserId == userId.Value);
-
-        var orders = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
-        return orders.Select(MapOrder).ToList();
-    }
-
-    public async Task<OrderDto?> CreateOrderAsync(int? userId, CreateOrderRequest request)
->>>>>>> origin/main
     {
         if (request.Items == null || !request.Items.Any())
             return null;
 
-<<<<<<< HEAD
+        var requestedItems = request.Items
+            .GroupBy(item => item.ProductId)
+            .Select(group => new CreateOrderItemRequest { ProductId = group.Key, Quantity = group.Sum(item => item.Quantity) })
+            .ToList();
+        if (requestedItems.Any(item => item.ProductId <= 0 || item.Quantity <= 0))
+            return null;
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
         var order = new OrderEntity
-=======
         var order = new Order
->>>>>>> origin/main
         {
             UserId = userId,
             CustomerName = $"{request.FirstName} {request.LastName}".Trim(),
@@ -84,21 +56,13 @@ public class OrderService : IOrderService
             Status = "Pending"
         };
 
-        foreach (var item in request.Items)
+        foreach (var item in requestedItems)
         {
-<<<<<<< HEAD
             var product = await _productRepository.GetByIdAsync(item.ProductId);
             if (product == null || item.Quantity <= 0)
                 continue;
 
             order.Items.Add(new OrderItemEntity
-=======
-            var product = await _context.Products.FindAsync(item.ProductId);
-            if (product == null || item.Quantity <= 0)
-                continue;
-
-            order.Items.Add(new OrderItem
->>>>>>> origin/main
             {
                 ProductId = product.Id,
                 ProductName = product.Name,
@@ -108,19 +72,22 @@ public class OrderService : IOrderService
             });
 
             order.TotalAmount += product.Price * item.Quantity;
+            product.Stock -= item.Quantity;
+            if (product.Stock == 0)
+                product.Status = "out-of-stock";
         }
 
         if (!order.Items.Any())
             return null;
 
-<<<<<<< HEAD
+        order.TotalAmount += ShippingFee;
 
         await _orderRepository.AddAsync(order);
 
         return OrderMappingExtensions.ToDto(order);
-=======
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         return MapOrder(order);
     }
@@ -130,6 +97,7 @@ public class OrderService : IOrderService
         return new OrderDto
         {
             Id = order.Id,
+            CreatedAt = order.CreatedAt,
             CustomerName = order.CustomerName,
             Email = order.Email,
             Phone = order.Phone,
@@ -147,6 +115,5 @@ public class OrderService : IOrderService
                 Quantity = i.Quantity
             }).ToList()
         };
->>>>>>> origin/main
     }
 }

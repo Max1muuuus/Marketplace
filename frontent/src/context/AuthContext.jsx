@@ -4,18 +4,33 @@ import { loginRequest, registerRequest } from '../services/mockApi'
 const AuthContext = createContext(null)
 
 function normalizeRoleSuffix(name, role) {
-  const suffix = role === 'admin' ? ' Admin' : role === 'customer' ? ' User' : ''
+  const normalizedRole = role?.toLowerCase()
+  const suffix = normalizedRole === 'admin' ? ' Admin' : normalizedRole === 'customer' ? ' User' : ''
   return suffix && name?.endsWith(suffix) ? name.slice(0, -suffix.length).trim() : name
 }
 
 function readSavedUser() {
   try {
     const savedUser = JSON.parse(localStorage.getItem('marketplace-user') || 'null')
+    if (savedUser && !Number.isInteger(Number(savedUser.id))) {
+      localStorage.removeItem('marketplace-user')
+      return null
+    }
     return savedUser ? { ...savedUser, name: normalizeRoleSuffix(savedUser.name, savedUser.role) } : null
   } catch {
     localStorage.removeItem('marketplace-user')
     return null
   }
+}
+
+function readSavedToken() {
+  const token = localStorage.getItem('marketplace-token') || ''
+  if (token.startsWith('demo-token-')) {
+    localStorage.removeItem('marketplace-token')
+    localStorage.removeItem('marketplace-user')
+    return ''
+  }
+  return token
 }
 
 export function AuthProvider({ children }) {
@@ -24,7 +39,7 @@ export function AuthProvider({ children }) {
     return saved ? JSON.parse(saved) : null
   })
 
-  const [token, setToken] = useState(() => localStorage.getItem('marketplace-token') || '')
+  const [token, setToken] = useState(readSavedToken)
 
   useEffect(() => {
     if (user) {
@@ -73,7 +88,25 @@ export function AuthProvider({ children }) {
     }
   }, [token])
 
-        setToken(response.token || '')
+  useEffect(() => {
+    const clearDeletedSession = () => {
+      setUser(null)
+      setToken('')
+    }
+    window.addEventListener('marketplace:unauthorized', clearDeletedSession)
+    return () => window.removeEventListener('marketplace:unauthorized', clearDeletedSession)
+  }, [])
+
+  const login = async (payload) => {
+    const response = await loginRequest({ email: payload.email, password: payload.password })
+    const nextUser = {
+      id: response.user.id,
+      name: normalizeRoleSuffix(response.user.name || `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim() || payload.name || 'Demo', response.user.role),
+      email: response.user.email,
+      role: response.user.role.toLowerCase(),
+    }
+    localStorage.setItem('marketplace-token', response.token)
+    setToken(response.token)
     setUser(nextUser)
     return nextUser
       } catch (error) {
@@ -97,14 +130,14 @@ export function AuthProvider({ children }) {
       email: payload.email,
           password: payload.password,
     })
-
-        const nextUser = mapUser(response.user)
-
-        if (response.token) {
-          localStorage.setItem('marketplace-token', response.token)
+    const nextUser = {
+      id: response.user.id,
+      name: normalizeRoleSuffix(response.user.name || `${response.user.firstName || ''} ${response.user.lastName || ''}`.trim(), response.user.role),
+      email: response.user.email,
+      role: response.user.role.toLowerCase(),
     }
-
-        setToken(response.token || '')
+    localStorage.setItem('marketplace-token', response.token)
+    setToken(response.token)
     setUser(nextUser)
     return nextUser
       } catch (error) {

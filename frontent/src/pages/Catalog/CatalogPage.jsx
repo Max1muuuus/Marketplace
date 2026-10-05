@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../../components/ProductCard/ProductCard'
 import SearchBar from '../../components/Search/SearchBar'
-import { fetchCategories, fetchProducts } from '../../services/mockApi' // Переконайся в правильності шляху
+import { fetchCategories, fetchProducts } from '../../services/mockApi'
 import { useLanguage } from '../../context/useLanguage'
 
 import styles from './CatalogPage.module.scss'
@@ -18,7 +18,8 @@ export default function CatalogPage() {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('featured')
   const [view, setView] = useState('grid')
-
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || '',
     brand: '',
@@ -28,11 +29,25 @@ export default function CatalogPage() {
     maxPrice: '',
   })
 
-  // 1. Завантаження списку категорій для select-фільтра
+  const selectedCategory = searchParams.get('category') || ''
+
   useEffect(() => {
-    const loadCategories = async () => {
-      const cats = await fetchCategories()
-      setCategoriesList(cats)
+    Promise.all([fetchProducts(), fetchCategories()]).then(([nextProducts, nextCategories]) => {
+      setProducts(nextProducts)
+      setCategories(nextCategories)
+    }).catch((error) => console.error('Unable to load catalog', error))
+  }, [])
+
+  const visibleProducts = useMemo(() => {
+    let nextProducts = [...products]
+
+    if (search.trim()) {
+      const query = search.toLowerCase()
+      nextProducts = nextProducts.filter((product) =>
+        [product.name, product.brand, product.category, product.description].some((field) =>
+          String(field).toLowerCase().includes(query),
+        ),
+      )
     }
     loadCategories()
   }, [])
