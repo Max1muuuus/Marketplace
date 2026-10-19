@@ -78,9 +78,9 @@ export const products = [
     stock: 8,
     condition: 'Новий',
     sellerId: 'seller-2',
-    image: 'https://images.unsplash.com/photo-1610792516302-30d7edb6d009?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=900&q=80',
     gallery: [
-      'https://images.unsplash.com/photo-1610792516302-30d7edb6d009?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=900&q=80',
     ],
     description: 'Флагманський смартфон з S Pen, потужним процесором та кращою камерою для контенту.',
@@ -194,10 +194,10 @@ export const products = [
     stock: 4,
     condition: 'Новий',
     sellerId: 'seller-3',
-    image: 'https://images.unsplash.com/photo-1587202372775-98927bfc1a8f?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=900&q=80',
     gallery: [
-      'https://images.unsplash.com/photo-1587202372775-98927bfc1a8f?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1635795297828-9c37c605d01a?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1591405351990-4726e331f141?auto=format&fit=crop&w=900&q=80',
     ],
     description: 'Потужна відеокарта для ігор в 4K із високою частотою кадрів та плавністю.',
     specs: {
